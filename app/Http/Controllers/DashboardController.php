@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Entity;
 use App\Models\Infrastructure;
 use App\Models\BreakdownLog;
 use Illuminate\Http\Request;
@@ -11,25 +10,38 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Statistik Utama untuk Card
+        $user = auth()->user();
+
+        // Siapkan Query Dasar
+        $infraQuery = Infrastructure::with('entity');
+        $logQuery = BreakdownLog::with('infrastructure.entity')->where('repair_status', '!=', 'resolved');
+
+        // Filter berdasarkan Role
+        if ($user->role === 'superadmin') {
+            $areaName = 'Pusat (Seluruh Regional)';
+        } else {
+            // Filter HANYA area operator yang login
+            $infraQuery->where('entity_id', $user->entity_id);
+            $logQuery->whereHas('infrastructure', function ($q) use ($user) {
+                $q->where('entity_id', $user->entity_id);
+            });
+            $areaName = $user->entity->name ?? 'Area Tidak Diketahui';
+        }
+
+        // Hitung Statistik
         $stats = [
-            'total' => Infrastructure::count(),
-            'available' => Infrastructure::where('status', 'available')->count(),
-            'breakdown' => Infrastructure::where('status', 'breakdown')->count(),
+            'total' => (clone $infraQuery)->count(),
+            'available' => (clone $infraQuery)->where('status', 'available')->count(),
+            'breakdown' => (clone $infraQuery)->where('status', 'breakdown')->count(),
         ];
 
-        // Data Aset dipisahkan berdasarkan Kategori untuk Tab
-        $equipment = Infrastructure::with('entity')->where('category', 'equipment')->get();
-        $facility = Infrastructure::with('entity')->where('category', 'facility')->get();
-        $utility = Infrastructure::with('entity')->where('category', 'utility')->get();
+        // Ambil Data Infrastruktur untuk ditampilkan di Dashboard
+        $infrastructures = $infraQuery->latest()->get();
 
-        // Data Log Insiden yang belum 'resolved'
-        $recent_logs = BreakdownLog::with('infrastructure.entity')
-            ->where('repair_status', '!=', 'resolved')
-            ->latest()
-            ->take(10)
-            ->get();
+        // Ambil 5 Log Kerusakan Terbaru di areanya
+        $recentBreakdowns = $logQuery->latest()->take(5)->get();
 
-        return view('admin.dashboard', compact('stats', 'equipment', 'facility', 'utility', 'recent_logs'));
+        // PERBAIKAN: Mengarahkan ke folder admin/dashboard.blade.php
+        return view('admin.dashboard', compact('stats', 'infrastructures', 'recentBreakdowns', 'areaName'));
     }
 }

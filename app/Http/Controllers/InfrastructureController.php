@@ -6,97 +6,187 @@ use App\Models\Infrastructure;
 use App\Models\Entity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class InfrastructureController extends Controller 
 {
     public function index() 
     {
-        $infrastructures = Infrastructure::with('entity')->latest()->get();
+        $user = auth()->user();
+
+        if ($user->role === 'superadmin') {
+            $infrastructures = Infrastructure::with('entity')->latest()->get();
+        } else {
+            $infrastructures = Infrastructure::with('entity')
+                ->where('entity_id', $user->entity_id)
+                ->latest()->get();
+        }
+
         return view('admin.infrastructures.index', compact('infrastructures'));
     }
 
     public function create() 
     {
-        $entities = Entity::all();
-        return view('admin.infrastructures.create', compact('entities'));
+        $user = auth()->user();
+        
+        // JIKA SUPERADMIN: Bisa pilih semua cabang. JIKA OPERATOR: Hanya cabang dia sendiri.
+        if ($user->role === 'superadmin') {
+            $entities = Entity::all();
+        } else {
+            $entities = Entity::where('id', $user->entity_id)->get();
+        }
+        
+        $typeCategoryMap = Infrastructure::select('type', 'category')
+                            ->distinct()
+                            ->pluck('category', 'type')
+                            ->toArray();
+
+        return view('admin.infrastructures.create', compact('entities', 'typeCategoryMap'));
     }
 
-    // INI BAGIAN YANG HARUS DIPERBAIKI
     public function store(Request $request) 
     {
-        // 1. Validasi input, tambahkan validasi untuk 'image'
+        $user = auth()->user();
+
+        // Validasi dasar
         $request->validate([
-            'entity_id' => 'required',
-            'category'  => 'required',
-            'type'      => 'required',
+            'category'  => 'required|in:equipment,facility,utility',
             'code_name' => 'required|unique:infrastructures',
-            'status'    => 'required',
-            'image'     => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048' // Pastikan ini ada
+            'status'    => 'required|in:available,breakdown',
+            'image'     => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
 
-        // 2. Ambil semua data request
-        $data = $request->all();
+        // Jika superadmin, entity_id wajib dari form. Jika operator, entity_id dipaksa dari sistem (keamanan).
+        $targetEntityId = $user->role === 'superadmin' ? $request->entity_id : $user->entity_id;
 
-        // 3. Logika untuk menangkap dan memindahkan file gambar
-        if ($request->hasFile('image')) {
-            // Ini akan menyimpan gambar ke folder: storage/app/public/assets/infrastructures
-            // dan mengembalikan string path-nya (contoh: 'assets/infrastructures/xyz.jpg')
-            $imagePath = $request->file('image')->store('assets/infrastructures', 'public');
-            
-            // Masukkan path gambar ke dalam array data untuk disimpan ke database
-            $data['image'] = $imagePath;
+        if ($user->role === 'superadmin' && empty($targetEntityId)) {
+            return back()->withErrors(['entity_id' => 'Entitas/Cabang wajib dipilih!'])->withInput();
         }
 
-        // 4. Simpan ke database
-        Infrastructure::create($data);
+        $finalType = $request->type_select === 'new' ? $request->type_new : $request->type_select;
+        
+        if (empty($finalType)) {
+            return back()->withErrors(['type_new' => 'Jenis alat wajib diisi!'])->withInput();
+        }
 
-        return redirect()->route('admin.infrastructures.index')->with('success', 'Aset baru beserta fotonya berhasil ditambahkan.');
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('assets/infrastructures', 'public');
+        }
+
+        Infrastructure::create([
+            'entity_id' => $targetEntityId, // Menggunakan ID yang sudah diamankan
+            'category'  => $request->category,
+            'type'      => $finalType,
+            'code_name' => $request->code_name,
+            'status'    => $request->status,
+            'quantity'  => 1,
+            'image'     => $imagePath,
+        ]);
+
+        return redirect()->route('admin.infrastructures.index')
+            ->with('success', 'Aset baru berhasil didaftarkan di wilayah Anda.');
     }
 
     public function edit(Infrastructure $infrastructure)
     {
-        $entities = Entity::all();
-        return view('admin.infrastructures.edit', compact('infrastructure', 'entities'));
+        $user = auth()->user();
+
+        // Proteksi: Operator tidak boleh edit alat cabang lain
+        if ($user->role !== 'superadmin' && $infrastructure->entity_id !== $user->entity_id) {
+            return redirect()->route('admin.infrastructures.index')->with('error', 'Akses ditolak! Ini bukan aset di wilayah Anda.');
+        }
+
+        if ($user->role === 'superadmin') {
+            $entities = Entity::all();
+        } else {
+            $entities = Entity::where('id', $user->entity_id)->get();
+        }
+        
+        $typeCategoryMap = Infrastructure::select('type', 'category')
+                            ->distinct()
+                            ->pluck('category', 'type')
+                            ->toArray();
+
+        return view('admin.infrastructures.edit', compact('infrastructure', 'entities', 'typeCategoryMap'));
     }
 
-    // UPDATE JUGA BAGIAN INI AGAR GAMBAR BISA DIEDIT
     public function update(Request $request, Infrastructure $infrastructure)
     {
+        $user = auth()->user();
+
+        if ($user->role !== 'superadmin' && $infrastructure->entity_id !== $user->entity_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $request->validate([
-            'entity_id' => 'required',
-            'category'  => 'required',
-            'type'      => 'required',
+            'category'  => 'required|in:equipment,facility,utility',
             'code_name' => 'required|unique:infrastructures,code_name,' . $infrastructure->id,
-            'status'    => 'required',
+            'status'    => 'required|in:available,breakdown',
             'image'     => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
         ]);
 
+        $targetEntityId = $user->role === 'superadmin' ? $request->entity_id : $infrastructure->entity_id;
+
+        $finalType = $request->type_select === 'new' ? $request->type_new : $request->type_select;
+        
+        if (empty($finalType)) {
+            return back()->withErrors(['type_new' => 'Jenis alat wajib diisi!'])->withInput();
+        }
+
         $data = $request->all();
+        $data['entity_id'] = $targetEntityId;
+        $data['type'] = $finalType;
+        $data['quantity'] = 1;
 
         if ($request->hasFile('image')) {
-            // Jika ada gambar lama, hapus dulu dari server agar tidak menumpuk
             if ($infrastructure->image) {
                 Storage::disk('public')->delete($infrastructure->image);
             }
-            // Simpan gambar baru
             $data['image'] = $request->file('image')->store('assets/infrastructures', 'public');
         }
 
         $infrastructure->update($data);
 
         return redirect()->route('admin.infrastructures.index')
-            ->with('success', 'Data aset berhasil diperbarui.');
+            ->with('success', 'Data inventaris berhasil diperbarui.');
     }
 
     public function destroy(Infrastructure $infrastructure) 
     {
-        // Hapus file fisik gambar dari folder storage sebelum datanya dihapus dari database
+        $user = auth()->user();
+        
+        if ($user->role !== 'superadmin' && $infrastructure->entity_id !== $user->entity_id) {
+            return redirect()->route('admin.infrastructures.index')->with('error', 'Akses ditolak!');
+        }
+
         if ($infrastructure->image) {
             Storage::disk('public')->delete($infrastructure->image);
         }
 
         $infrastructure->delete();
 
-        return redirect()->route('admin.infrastructures.index')->with('success', 'Aset berhasil dihapus.');
+        return redirect()->route('admin.infrastructures.index')
+            ->with('success', 'Aset telah dihapus dari database.');
+    }
+
+    public function deleteAll()
+    {
+        if (auth()->user()->role !== 'superadmin') {
+            return back()->with('error', 'Akses ditolak!');
+        }
+
+        $infrastructuresWithImages = Infrastructure::whereNotNull('image')->get();
+        foreach ($infrastructuresWithImages as $item) {
+            Storage::disk('public')->delete($item->image);
+        }
+
+        Schema::disableForeignKeyConstraints();
+        \App\Models\BreakdownLog::truncate();
+        Infrastructure::truncate();
+        Schema::enableForeignKeyConstraints();
+
+        return redirect()->route('admin.infrastructures.index')
+            ->with('success', 'Seluruh database infrastruktur telah dibersihkan total.');
     }
 }

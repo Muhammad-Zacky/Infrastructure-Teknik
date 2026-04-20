@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EntityController;
 use App\Http\Controllers\InfrastructureController;
 use App\Http\Controllers\BreakdownLogController;
+use App\Http\Controllers\UserController;
 use App\Models\Entity;
 use App\Models\Infrastructure;
 use App\Models\BreakdownLog;
@@ -21,7 +22,7 @@ Route::get('/', function () {
     $entities = Entity::with('infrastructures')->get()->map(function($entity) {
         $entity->Infrastructure_stats_by_cat = [
             'equipment' => $entity->infrastructures->where('category', 'equipment')->groupBy('type')->map(fn($items) => [
-                'available' => $items->where('status', 'available')->count(),
+                'available' => $items->where('status', 'available')->count(), // Menggunakan count() kembali
                 'breakdown' => $items->where('status', 'breakdown')->count(),
             ]),
             'facility' => $entity->infrastructures->where('category', 'facility')->groupBy('type')->map(fn($items) => [
@@ -46,27 +47,39 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Rute Admin & Auth (Hanya Bisa Diakses Setelah Login)
+| Rute Terproteksi (Hanya Bisa Diakses Setelah Login)
 |--------------------------------------------------------------------------
 */
-
 Route::middleware(['auth', 'verified'])->group(function () {
     
-    // 1. Rute Dashboard Utama Admin
+    // 1. Dashboard Utama Admin
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // 2. Rute CRUD Master Data (Diberi prefix /admin/...)
+    // 2. Grup Utama Admin (Operasional & Master Data)
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::resource('entities', EntityController::class);
+
+        /* --- AKSES SEMUA LEVEL (Superadmin & Operator Cabang) --- */
+        
+        // Fitur Hapus Semua Data (Wajib di atas resource)
+        Route::delete('infrastructures/delete-all', [InfrastructureController::class, 'deleteAll'])->name('infrastructures.deleteAll');
+        
         Route::resource('infrastructures', InfrastructureController::class);
         Route::resource('breakdowns', BreakdownLogController::class);
+
+        /* --- KHUSUS AKSES SUPERADMIN (Administrator Pusat) --- */
+        Route::middleware(['superadmin'])->group(function () {
+            // Manajemen Bagian/Terminal
+            Route::resource('entities', EntityController::class);
+            // Manajemen Akun Pegawai
+            Route::resource('users', UserController::class);
+        });
+        
     });
 
-    // 3. Rute untuk manajemen profil (Bawaan Laravel Breeze)
+    // 3. Manajemen Profil Pengguna
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Memuat rute autentikasi bawaan (login, logout, forgot password)
 require __DIR__.'/auth.php';
