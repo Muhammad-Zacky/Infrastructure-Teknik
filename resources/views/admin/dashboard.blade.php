@@ -231,18 +231,15 @@
                                     $available = $typeItems->where('status', 'available')->count();
                                     $breakdown = $typeItems->where('status', 'breakdown')->count();
                                     $repImage = $typeItems->whereNotNull('image')->first();
-                                    
-                                    // PERBAIKAN LINK GAMBAR WEB
-                                    $imgUrl = '';
-                                    if ($repImage && $repImage->image) {
-                                        $imgStr = $repImage->image;
-                                        $imgUrl = str_starts_with($imgStr, 'assets') ? asset($imgStr) : asset('storage/' . ltrim($imgStr, '/'));
-                                    }
+                                    $imgPath = $repImage ? ltrim($repImage->image, '/') : '';
                                 @endphp
                                 <div class="asset-card">
                                     <div class="asset-img-box">
-                                        @if($imgUrl)
-                                            <img src="{{ $imgUrl }}" class="w-full h-full object-cover">
+                                        @if($imgPath)
+                                            <img src="{{ asset('storage/' . $imgPath) }}" 
+                                                 onerror="this.onerror=null; this.src='{{ asset($imgPath) }}';" 
+                                                 class="w-full h-full object-cover" 
+                                                 alt="{{ $type }}">
                                         @else
                                             <i class="fas fa-truck-monster text-4xl text-slate-300"></i>
                                         @endif
@@ -275,17 +272,15 @@
                                     $available = $typeItems->where('status', 'available')->count();
                                     $breakdown = $typeItems->where('status', 'breakdown')->count();
                                     $repImage = $typeItems->whereNotNull('image')->first();
-                                    
-                                    $imgUrl = '';
-                                    if ($repImage && $repImage->image) {
-                                        $imgStr = $repImage->image;
-                                        $imgUrl = str_starts_with($imgStr, 'assets') ? asset($imgStr) : asset('storage/' . ltrim($imgStr, '/'));
-                                    }
+                                    $imgPath = $repImage ? ltrim($repImage->image, '/') : '';
                                 @endphp
                                 <div class="asset-card">
                                     <div class="asset-img-box">
-                                        @if($imgUrl)
-                                            <img src="{{ $imgUrl }}" class="w-full h-full object-cover">
+                                        @if($imgPath)
+                                            <img src="{{ asset('storage/' . $imgPath) }}" 
+                                                 onerror="this.onerror=null; this.src='{{ asset($imgPath) }}';" 
+                                                 class="w-full h-full object-cover" 
+                                                 alt="{{ $type }}">
                                         @else
                                             <i class="fas fa-warehouse text-4xl text-slate-300"></i>
                                         @endif
@@ -316,17 +311,15 @@
                                     $available = $typeItems->where('status', 'available')->count();
                                     $breakdown = $typeItems->where('status', 'breakdown')->count();
                                     $repImage = $typeItems->whereNotNull('image')->first();
-                                    
-                                    $imgUrl = '';
-                                    if ($repImage && $repImage->image) {
-                                        $imgStr = $repImage->image;
-                                        $imgUrl = str_starts_with($imgStr, 'assets') ? asset($imgStr) : asset('storage/' . ltrim($imgStr, '/'));
-                                    }
+                                    $imgPath = $repImage ? ltrim($repImage->image, '/') : '';
                                 @endphp
                                 <div class="asset-card">
                                     <div class="asset-img-box">
-                                        @if($imgUrl)
-                                            <img src="{{ $imgUrl }}" class="w-full h-full object-cover">
+                                        @if($imgPath)
+                                            <img src="{{ asset('storage/' . $imgPath) }}" 
+                                                 onerror="this.onerror=null; this.src='{{ asset($imgPath) }}';" 
+                                                 class="w-full h-full object-cover" 
+                                                 alt="{{ $type }}">
                                         @else
                                             <i class="fas fa-bolt text-4xl text-slate-300"></i>
                                         @endif

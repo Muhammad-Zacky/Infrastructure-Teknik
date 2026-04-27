@@ -42,7 +42,6 @@
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 16px;
-            /* Padding dikecilkan untuk mobile */
             padding: 12px; 
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
@@ -93,7 +92,6 @@
         .stat-breakdown .stat-label { color: #991b1b; }
         .stat-breakdown .stat-value { background-color: #ef4444; color: white; }
 
-        /* Font ukuran stat dikecilkan sedikit untuk mobile */
         .stat-label { font-size: 9px; font-weight: 800; text-transform: uppercase; }
         .stat-value { font-size: 10px; font-weight: 900; padding: 2px 6px; border-radius: 6px; }
 
@@ -102,7 +100,6 @@
             .stat-value { font-size: 11px; padding: 2px 8px; }
         }
 
-        /* Menyembunyikan scrollbar tapi tetap bisa di-scroll */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -164,7 +161,7 @@
                 $availableCategories = $entity->infrastructures->pluck('category')->unique()->values()->toJson();
             @endphp
             
-            <section class="animate-fade-up" x-show="filter === 'all' || {{ $availableCategories }}.includes(filter)">
+            <section class="animate-fade-up" x-show="filter === 'all' || {{ $availableCategories }}.includes(filter)" x-data="{ showModal: false }">
                 
                 <div class="bg-gradient-to-r from-[#003366] to-[#0055a4] text-white px-5 py-4 md:px-8 md:py-5 rounded-t-2xl shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <h3 class="font-black text-sm md:text-lg uppercase tracking-widest flex items-center gap-2 md:gap-3">
@@ -178,8 +175,8 @@
 
                 <div class="bg-white/80 border-x border-b border-slate-200 rounded-b-2xl p-4 md:p-8 shadow-sm">
                     @if($entity->infrastructures->count() > 0)
+                        
                         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-3 md:gap-6">
-                            
                             @foreach ($entity->infrastructures->groupBy('type') as $type => $items)
                                 @php
                                     $availableQty = $items->where('status', 'available')->count();
@@ -189,11 +186,14 @@
                                 @endphp
                                 
                                 <div class="asset-card group" x-show="filter === 'all' || filter === '{{ $itemCategory }}'">
-                                    <div class="asset-image-placeholder">
+                                    <div class="asset-image-placeholder relative group">
                                         @if($representativeItem && $representativeItem->image)
-                                            <img src="{{ asset('storage/' . $representativeItem->image) }}" class="w-full h-full object-cover">
+                                            <img src="{{ asset('storage/' . ltrim($representativeItem->image, '/')) }}" 
+                                                 onerror="this.onerror=null; this.src='{{ asset(ltrim($representativeItem->image, '/')) }}';"
+                                                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                 alt="{{ $type }}">
                                         @else
-                                            <i class="fas fa-truck-loading text-4xl md:text-5xl text-slate-300"></i>
+                                            <i class="fas fa-truck-loading text-4xl md:text-5xl text-slate-300 transition-transform duration-500 group-hover:scale-110"></i>
                                         @endif
                                     </div>
 
@@ -211,9 +211,62 @@
                                     </div>
                                 </div>
                             @endforeach
-
                         </div>
-                    @else
+
+                        <div class="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-slate-200 border-dashed text-center">
+                            <button @click="showModal = true" class="inline-flex items-center justify-center px-6 py-2.5 bg-slate-50 hover:bg-blue-50 text-[#0055a4] border border-slate-200 hover:border-blue-200 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all">
+                                <i class="fas fa-list-ul mr-2"></i> Lihat Semua Alat
+                            </button>
+                        </div>
+
+                        <div x-show="showModal" class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm transition-opacity" x-cloak>
+                            <div @click.away="showModal = false" x-show="showModal" x-transition.scale.origin.bottom class="bg-white rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+                                
+                                <div class="bg-[#00152b] px-6 py-4 flex items-center justify-between shrink-0">
+                                    <div>
+                                        <h3 class="text-white font-black uppercase tracking-widest text-sm">Daftar Aset</h3>
+                                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider mt-1">{{ $entity->name }}</p>
+                                    </div>
+                                    <button @click="showModal = false" class="w-8 h-8 rounded-full bg-white/10 hover:bg-red-500 text-white flex items-center justify-center transition-colors">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+
+                                <div class="flex-1 overflow-y-auto p-6 bg-slate-50">
+                                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                                        <table class="w-full text-left text-xs whitespace-nowrap">
+                                            <thead class="bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-widest border-b border-slate-200">
+                                                <tr>
+                                                    <th class="px-5 py-3 w-12 text-center">No</th>
+                                                    <th class="px-5 py-3">Kode Alat</th>
+                                                    <th class="px-5 py-3">Tipe / Jenis</th>
+                                                    <th class="px-5 py-3">Kategori</th>
+                                                    <th class="px-5 py-3 text-center">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                @foreach($entity->infrastructures as $idx => $asset)
+                                                <tr class="hover:bg-slate-50 transition-colors">
+                                                    <td class="px-5 py-3 text-center font-bold text-slate-400">{{ $idx + 1 }}</td>
+                                                    <td class="px-5 py-3 font-black text-[#003366] uppercase">{{ $asset->code_name }}</td>
+                                                    <td class="px-5 py-3 font-bold text-slate-600">{{ $asset->type }}</td>
+                                                    <td class="px-5 py-3 text-slate-500 uppercase text-[10px] tracking-widest">{{ $asset->category }}</td>
+                                                    <td class="px-5 py-3 text-center">
+                                                        @if($asset->status == 'available')
+                                                            <span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-black uppercase">Ready</span>
+                                                        @else
+                                                            <span class="px-2 py-1 rounded bg-red-50 text-red-600 border border-red-100 text-[9px] font-black uppercase">Breakdown</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @else
                         <p class="text-center text-slate-400 font-bold py-8 md:py-10 uppercase text-[10px] md:text-xs">Belum ada infrastruktur didaftarkan</p>
                     @endif
                 </div>
