@@ -73,6 +73,12 @@
                                     <div class="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
                                     <span class="text-xs font-black text-slate-700 uppercase">{{ $log->vendor_pic ?? 'Internal' }}</span>
                                 </div>
+                                @if($log->updated_by)
+                                    <div class="flex items-center gap-1.5 mt-2 opacity-60">
+                                        <i class="fas fa-user-edit text-[8px] text-slate-400"></i>
+                                        <p class="text-[8px] font-black tracking-widest text-slate-400 uppercase">{{ $log->updatedBy->name ?? 'System' }}</p>
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-8 py-6 text-right">
                                 <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

@@ -7,6 +7,7 @@ use App\Http\Controllers\InfrastructureController;
 use App\Http\Controllers\BreakdownLogController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AnalyticsController; // <-- Tambahan Controller Analytics
+use App\Http\Controllers\ExportController;
 use App\Models\Entity;
 use App\Models\Infrastructure;
 use App\Models\BreakdownLog;
@@ -38,7 +39,7 @@ Route::get('/', function () {
         return $entity;
     });
 
-    $breakdowns = BreakdownLog::with('infrastructure.entity')
+    $breakdowns = BreakdownLog::with(['infrastructure' => fn($q) => $q->withTrashed()->with('entity')])
         ->where('repair_status', '!=', 'resolved')
         ->orderBy('created_at', 'desc')
         ->get();
@@ -63,9 +64,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Fitur Analytics / Statistik Detail
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-        
-        // Fitur Hapus Semua Data (Wajib di atas resource)
-        Route::delete('infrastructures/delete-all', [InfrastructureController::class, 'deleteAll'])->name('infrastructures.deleteAll');
+        Route::get('/export/process', [ExportController::class, 'process'])->name('export.process');
         
         Route::resource('infrastructures', InfrastructureController::class);
         Route::resource('breakdowns', BreakdownLogController::class);

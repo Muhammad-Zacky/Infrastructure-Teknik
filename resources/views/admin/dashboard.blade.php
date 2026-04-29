@@ -80,49 +80,11 @@
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-
-        /* Wadah PDF disembunyikan menggunakan display none agar tidak merusak layout asli */
-        #hiddenExportTable { 
-            display: none; 
-            background-color: #ffffff; 
-            width: 1300px; /* Lebar baku untuk kertas Lanskap PDF */
-            margin: 0 auto;
-            padding: 20px;
-        }
     </style>
-
     @php
-        // FUNGSI RAHASIA (HANYA UNTUK PDF): Pencari Gambar Agresif Server Lokal
-        if (!function_exists('getBase64Image')) {
-            function getBase64Image($imagePath) {
-                if (empty($imagePath)) return null;
-                $cleanPath = ltrim($imagePath, '/');
-                $basename = basename($cleanPath);
-                
-                // Daftar lokasi persembunyian file di server Laravel
-                $paths = [
-                    public_path($cleanPath),
-                    storage_path('app/public/' . $cleanPath),
-                    public_path('storage/' . $cleanPath),
-                    public_path('assets/infrastructures/' . $basename),
-                    storage_path('app/public/assets/infrastructures/' . $basename)
-                ];
-                
-                foreach($paths as $p) {
-                    if (file_exists($p) && is_file($p)) {
-                        $ext = strtolower(pathinfo($p, PATHINFO_EXTENSION));
-                        $type = in_array($ext, ['jpg', 'jpeg']) ? 'jpeg' : ($ext == 'png' ? 'png' : $ext);
-                        return 'data:image/' . $type . ';base64,' . base64_encode(file_get_contents($p));
-                    }
-                }
-                return null;
-            }
-        }
-
-        $equipment = isset($infrastructures) ? $infrastructures->where('category', 'equipment') : collect();
-        $facility = isset($infrastructures) ? $infrastructures->where('category', 'facility') : collect();
-        $utility = isset($infrastructures) ? $infrastructures->where('category', 'utility') : collect();
+        $equipment = isset($allInfrastructures) ? $allInfrastructures->where('category', 'equipment') : collect();
+        $facility = isset($allInfrastructures) ? $allInfrastructures->where('category', 'facility') : collect();
+        $utility = isset($allInfrastructures) ? $allInfrastructures->where('category', 'utility') : collect();
 
         $groupedEquipment = $equipment->groupBy(fn($i) => $i->entity->name ?? 'Unknown Entity');
         $groupedFacility = $facility->groupBy(fn($i) => $i->entity->name ?? 'Unknown Entity');
@@ -131,17 +93,11 @@
         $countEq = $equipment->count();
         $countFac = $facility->count();
         $countUtil = $utility->count();
-        
-        $allGroups = [
-            'EQUIPMENT' => $groupedEquipment,
-            'FACILITY' => $groupedFacility,
-            'UTILITY' => $groupedUtility
-        ];
     @endphp
 
     <div id="main-ui" class="max-w-[1600px] mx-auto w-full space-y-8 pb-16">
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col xl:flex-row items-center justify-between gap-8 animate-fade">
+        <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col xl:flex-row items-center justify-between gap-8 animate-fade relative z-[60]">
             <div class="flex flex-col sm:flex-row items-center text-center sm:text-left gap-6 w-full xl:w-auto">
                 <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                     <img src="{{ asset('danantara.png') }}" alt="Danantara" class="h-10 md:h-12 object-contain">
@@ -151,9 +107,19 @@
             </div>
 
             <div class="flex flex-wrap justify-center gap-3 w-full xl:w-auto">
-                <button onclick="exportToPDF()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-900/20 transition-all flex items-center gap-2">
-                    <i class="fas fa-file-pdf"></i> Export Laporan PDF
-                </button>
+                <div class="relative group z-50">
+                    <button class="bg-[#003366] hover:bg-[#002244] text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
+                        <i class="fas fa-file-export"></i> Export Laporan <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                    <div class="absolute left-0 xl:right-0 xl:left-auto top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top xl:origin-top-right scale-95 group-hover:scale-100 flex flex-col overflow-hidden">
+                        <button onclick="openExportModal('pdf')" class="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 text-slate-700 text-[10px] font-black uppercase tracking-widest transition-colors border-b border-slate-50">
+                            <i class="fas fa-file-pdf text-red-500 text-sm"></i> Format PDF
+                        </button>
+                        <button onclick="openExportModal('excel')" class="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 text-slate-700 text-[10px] font-black uppercase tracking-widest transition-colors">
+                            <i class="fas fa-file-excel text-emerald-500 text-sm"></i> Format Excel
+                        </button>
+                    </div>
+                </div>
 
                 <a href="{{ route('admin.infrastructures.create') }}" class="bg-[#003366] hover:bg-[#001e3c] text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
                     <i class="fas fa-plus"></i> Aset Baru
@@ -366,7 +332,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-xs font-medium">
-                        @forelse($recentBreakdowns ?? [] as $index => $log)
+                        @forelse($recentLogs ?? [] as $index => $log)
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-8 py-5 text-center text-slate-400 font-bold">{{ $index + 1 }}</td>
                             <td class="px-8 py-5 text-slate-600 uppercase font-bold">{{ $log->infrastructure->entity->name ?? '-' }}</td>
@@ -395,157 +361,13 @@
 
     </div>
 
-    <div id="hiddenExportTable">
-        
-        <table style="width: 100%; margin-bottom: 20px; border-collapse: collapse; font-family: Arial, sans-serif;">
-            <tr>
-                <td style="width: 20%;">
-                    @php
-                        $pelindoBase64 = getBase64Image('pelindo.png');
-                    @endphp
-                    @if($pelindoBase64)
-                        <img src="{{ $pelindoBase64 }}" style="height: 50px;">
-                    @else
-                        <h1 style="color:#0055a4; font-weight:bold;">PELINDO</h1>
-                    @endif
-                </td>
-                <td style="text-align: center; width: 60%;">
-                    <h2 style="margin: 0; font-size: 18px; font-weight: bold; font-family: Arial, sans-serif;">DASHBOARD INFRASTRUCTURE AVAILABILITY</h2>
-                    <h3 style="margin: 5px 0 0 0; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif;">PORT OF TELUK BAYUR</h3>
-                </td>
-                <td style="width: 20%; text-align: right; font-size: 12px; vertical-align: top; font-family: Arial, sans-serif;">
-                    <strong>Last Update:</strong><br>{{ now()->format('d-m-Y H:i') }}
-                </td>
-            </tr>
-        </table>
-
-        @foreach($allGroups as $catName => $groupedItems)
-            @if($groupedItems->count() > 0)
-                <div style="background-color: #003366; color: white; padding: 8px 15px; font-weight: bold; font-size: 14px; margin-top: 30px; margin-bottom: 15px; font-family: Arial, sans-serif;">
-                    DATA KATEGORI: {{ $catName }}
-                </div>
-                
-                @foreach($groupedItems as $entityName => $items)
-                    @php
-                        $types = $items->groupBy('type');
-                        $typeNames = $types->keys()->toArray();
-                    @endphp
-                    
-                    <table style="width: 100%; border-collapse: collapse; text-align: center; margin-bottom: 20px; border: 1px solid #000; font-family: Arial, sans-serif;">
-                        <tr>
-                            <td style="width: 250px; font-weight: bold; padding: 10px; background-color: #f1f5f9; text-align: left; border: 1px solid #000;">{{ $entityName }}</td>
-                            @foreach($typeNames as $t)
-                                <td style="font-weight: bold; padding: 10px; font-size: 11px; background-color: #f1f5f9; border: 1px solid #000;">{{ strtoupper($t) }}</td>
-                            @endforeach
-                        </tr>
-                        
-                        <tr>
-                            <td style="padding: 10px; font-size: 12px; text-align: left; border: 1px solid #000;">(Gambar Aset Area)</td>
-                            @foreach($typeNames as $t)
-                                @php
-                                    $repImage = $types[$t]->whereNotNull('image')->first();
-                                    $imgBase64 = $repImage ? getBase64Image($repImage->image) : null;
-                                @endphp
-                                
-                                <td style="padding: 10px; height: 110px; vertical-align: middle; border: 1px solid #000;">
-                                    @if($imgBase64)
-                                        <img src="{{ $imgBase64 }}" style="max-height: 90px; max-width: 130px; object-fit: contain;">
-                                    @else
-                                        <span style="color: #cbd5e1; font-size: 10px;">NO IMAGE</span>
-                                    @endif
-                                </td>
-                            @endforeach
-                        </tr>
-                        
-                        <tr>
-                            <td style="font-weight: bold; font-size: 12px; text-align: left; padding: 10px; border: 1px solid #000;">AVAILABLE</td>
-                            @foreach($typeNames as $t)
-                                @php $av = $types[$t]->where('status', 'available')->count(); @endphp
-                                <td style="background-color: #10b981; color: white; font-size: 16px; font-weight: bold; padding: 10px; border: 1px solid #000;">{{ $av }}</td>
-                            @endforeach
-                        </tr>
-                        <tr>
-                            <td style="font-weight: bold; font-size: 12px; text-align: left; padding: 10px; border: 1px solid #000;">BREAKDOWN</td>
-                            @foreach($typeNames as $t)
-                                @php $bd = $types[$t]->where('status', 'breakdown')->count(); @endphp
-                                <td style="background-color: {{ $bd > 0 ? '#ef4444' : '#f59e0b' }}; color: white; font-size: 16px; font-weight: bold; padding: 10px; border: 1px solid #000;">{{ $bd }}</td>
-                            @endforeach
-                        </tr>
-                    </table>
-                @endforeach
-            @endif
-        @endforeach
-
-        <div style="background-color: #00e5ff; color: black; padding: 8px 15px; font-weight: bold; font-size: 14px; margin-top: 30px; margin-bottom: 10px; font-family: Arial, sans-serif;">
-            RINCIAN LOG INSIDEN AKTIF
-        </div>
-        <table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #000; font-size: 11px; font-family: Arial, sans-serif;">
-            <tr style="background-color: #f8fafc;">
-                <th style="padding: 8px; border: 1px solid #000;">NO</th>
-                <th style="padding: 8px; border: 1px solid #000;">PELINDO ENTITY</th>
-                <th style="padding: 8px; border: 1px solid #000;">EQUIPMENT</th>
-                <th style="padding: 8px; text-align: left; border: 1px solid #000;">BREAKDOWN DETAIL</th>
-                <th style="padding: 8px; border: 1px solid #000;">STATUS</th>
-                <th style="padding: 8px; border: 1px solid #000;">PIC</th>
-            </tr>
-            @foreach($recentBreakdowns ?? [] as $index => $log)
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #000;">{{ $index + 1 }}</td>
-                    <td style="padding: 8px; border: 1px solid #000;">{{ $log->infrastructure->entity->name ?? "-" }}</td>
-                    <td style="padding: 8px; border: 1px solid #000;">{{ $log->infrastructure->code_name ?? "-" }}</td>
-                    <td style="padding: 8px; text-align: left; border: 1px solid #000;">{{ $log->issue_detail }}</td>
-                    <td style="padding: 8px; border: 1px solid #000;">{{ ucwords(str_replace("_", " ", $log->repair_status)) }}</td>
-                    <td style="padding: 8px; border: 1px solid #000;">{{ $log->vendor_pic ?? "Internal" }}</td>
-                </tr>
-            @endforeach
-            @if(empty($recentBreakdowns) || count($recentBreakdowns) == 0)
-                <tr><td colspan="6" style="padding: 15px; color: #94a3b8; border: 1px solid #000;">Tidak ada kerusakan alat saat ini</td></tr>
-            @endif
-        </table>
-    </div>
+    <!-- Hidden Report Component (for fallback) -->
+    <x-export-report :infrastructures="$allInfrastructures" :recentBreakdowns="$allActiveBreakdowns" />
+    
+    <!-- Export Filter Modal -->
+    <x-export-filter-modal />
 
     <script>
-        // TRIK SULAP: Fungsi Export ke PDF Dijamin Gambar Muncul
-        function exportToPDF() {
-            // Ambil Elemen UI Utama dan Elemen Laporan Rahasia
-            let mainUI = document.getElementById('main-ui');
-            let exportTable = document.getElementById('hiddenExportTable');
-            
-            // Set kursor jadi loading
-            document.body.style.cursor = 'wait';
-
-            // Scroll ke atas (Penting agar html2canvas tidak terpotong)
-            window.scrollTo(0, 0);
-
-            // 1. SEMBUNYIKAN UI Dashboard Utama
-            mainUI.style.display = 'none';
-            // 2. MUNCULKAN Laporan PDF (Agar terbaca utuh oleh html2canvas)
-            exportTable.style.display = 'block';
-
-            let opt = {
-                margin:       0.3,
-                filename:     "Laporan_Aset_Pelindo_{{ date('d_M_Y') }}.pdf",
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: 0 }, 
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
-            };
-
-            // Beri jeda 300ms agar browser tenang merender gambar, lalu potret
-            setTimeout(() => {
-                html2pdf().set(opt).from(exportTable).save().then(function() {
-                    // 3. SETELAH SELESAI, KEMBALIKAN SEPERTI SEMULA
-                    mainUI.style.display = 'block';
-                    exportTable.style.display = 'none';
-                    document.body.style.cursor = 'default';
-                }).catch(function(error) {
-                    console.log('PDF Error:', error);
-                    mainUI.style.display = 'block';
-                    exportTable.style.display = 'none';
-                    document.body.style.cursor = 'default';
-                });
-            }, 300);
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             const healthCtx = document.getElementById('healthChart').getContext('2d');
             new Chart(healthCtx, {

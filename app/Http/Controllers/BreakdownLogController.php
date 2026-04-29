@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\BreakdownLog;
 use App\Models\Infrastructure;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreBreakdownLogRequest;
+use App\Http\Requests\UpdateBreakdownLogRequest;
+use App\Helpers\ResponseMessage;
 use Illuminate\Support\Facades\Storage;
 
 class BreakdownLogController extends Controller
@@ -15,15 +17,26 @@ class BreakdownLogController extends Controller
 
         // JIKA YANG LOGIN ADALAH SUPERADMIN (TAMPILAN RIWAYAT LOG GLOBAL)
         if ($user->role === 'superadmin') {
-            $logs = BreakdownLog::with(['infrastructure.entity'])->latest()->get();
-            return view('admin.breakdowns.index_admin', compact('logs'));
-        } 
-        
+            // MAJOR FIX: Add pagination (20 items per page for admin view) and handle soft-deleted infrastructures
+            $logs = BreakdownLog::with(['infrastructure' => fn($q) => $q->withTrashed()->with('entity')])->latest()->paginate(20);
+            
+            // For the export report
+            $allInfrastructures = Infrastructure::with('entity')->get();
+            $recentBreakdowns = BreakdownLog::with(['infrastructure' => fn($q) => $q->withTrashed()->with('entity')])
+                ->where('repair_status', '!=', 'resolved')
+                ->latest()
+                ->get();
+                
+            return view('admin.breakdowns.index_admin', compact('logs', 'allInfrastructures', 'recentBreakdowns'));
+        }
+
         // JIKA YANG LOGIN ADALAH OPERATOR (TAMPILAN EXCEL KESIAPAN ALAT)
         else {
+            // MAJOR FIX: Add pagination for operator view (15 items per page)
             $infrastructures = Infrastructure::with('entity')
                 ->where('entity_id', $user->entity_id)
-                ->get();
+                ->latest()
+                ->paginate(15);
 
             // Ambil log yang belum 'resolved' (selesai) untuk cabang tersebut
             $activeBreakdowns = BreakdownLog::where('repair_status', '!=', 'resolved')
@@ -32,62 +45,99 @@ class BreakdownLogController extends Controller
                 })
                 ->get()
                 ->keyBy('infrastructure_id');
+                
+            // For the export report
+            $allInfrastructures = Infrastructure::with('entity')
+                ->where('entity_id', $user->entity_id)
+                ->get();
+            $recentBreakdowns = BreakdownLog::with(['infrastructure' => fn($q) => $q->withTrashed()->with('entity')])
+                ->where('repair_status', '!=', 'resolved')
+                ->whereHas('infrastructure', function($q) use ($user) {
+                    $q->where('entity_id', $user->entity_id);
+                })
+                ->latest()
+                ->get();
 
-            return view('admin.breakdowns.index_operator', compact('infrastructures', 'activeBreakdowns'));
+            return view('admin.breakdowns.index_operator', compact('infrastructures', 'activeBreakdowns', 'allInfrastructures', 'recentBreakdowns'));
         }
     }
 
-    public function store(Request $request)
+    public function store(StoreBreakdownLogRequest $request)
     {
-        $request->validate([
-            'infrastructure_id' => 'required|exists:infrastructures,id',
-            'issue_detail' => 'required|string',
-            'vendor_pic' => 'required|string',
-        ]);
+        $user = auth()->user();
 
-        // 1. Catat ke Log Kerusakan (Tahap awal: troubleshooting)
+        // Get the infrastructure and validate it exists
+        $infrastructure = Infrastructure::findOrFail($request->infrastructure_id);
+
+        // Authorization check: Operator cannot create breakdown for other entity's infrastructure
+        if ($user->role !== 'superadmin' && $infrastructure->entity_id !== $user->entity_id) {
+            abort(403, 'Unauthorized: Anda tidak bisa membuat laporan untuk aset di cabang lain.');
+        }
+
+        // Prevent duplicate active tickets
+        $activeTicketExists = BreakdownLog::where('infrastructure_id', $infrastructure->id)
+            ->where('repair_status', '!=', 'resolved')
+            ->exists();
+            
+        if ($activeTicketExists) {
+            return redirect()->back()->withErrors(['infrastructure_id' => 'Aset ini sedang dalam status Breakdown dan memiliki laporan perbaikan yang belum selesai.'])->withInput();
+        }
+
+        // 1. Catat ke Log Kerusakan (Tahap awal: reported - FIXED dari 'troubleshooting')
         BreakdownLog::create([
             'infrastructure_id' => $request->infrastructure_id,
             'issue_detail' => $request->issue_detail,
-            'repair_status' => 'troubleshooting',
+            'repair_status' => 'reported',
             'vendor_pic' => $request->vendor_pic,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
         ]);
 
         // 2. Ubah status alat menjadi breakdown
         Infrastructure::where('id', $request->infrastructure_id)->update(['status' => 'breakdown']);
 
-        return redirect()->back()->with('success', 'Laporan kerusakan berhasil dicatat. Status alat kini Breakdown.');
+        return redirect()->back()->with('success', ResponseMessage::BREAKDOWN_CREATED);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateBreakdownLogRequest $request, $id)
     {
+        $user = auth()->user();
         $log = BreakdownLog::findOrFail($id);
-        
-        // 1. Validasi Inputan (Status, File Bukti Opsional, dan Tanggal-tanggal)
-        $request->validate([
-            'repair_status'     => 'required|string',
-            'document_proof'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120', // Maks 5MB
-            'troubleshoot_date' => 'nullable|date',
-            'ba_date'           => 'nullable|date',
-            'work_order_date'   => 'nullable|date',
-            'pr_po_date'        => 'nullable|date',
-            'sparepart_date'    => 'nullable|date',
-            'start_work_date'   => 'nullable|date',
-            'com_test_date'     => 'nullable|date',
-            'resolved_date'     => 'nullable|date',
-        ]);
+
+        // Authorization check: Operator cannot update breakdown log for other entity
+        if ($user->role !== 'superadmin' && $log->infrastructure->entity_id !== $user->entity_id) {
+            abort(403, 'Unauthorized: Anda tidak bisa mengupdate laporan dari cabang lain.');
+        }
 
         // 2. Ambil semua request data kecuali token form
         $dataToUpdate = $request->except(['_token', '_method']);
 
+        // Add audit trail
+        $dataToUpdate['updated_by'] = $user->id;
+
+        // Workflow Validation: Strict sequential progression
+        $statusOrder = ['reported' => 1, 'order_part' => 2, 'on_progress' => 3, 'resolved' => 4];
+        
+        if (isset($request->repair_status)) {
+            $currentStatus = $log->repair_status;
+            $newStatus = $request->repair_status;
+            
+            // Prevent skipping steps forward
+            if ($statusOrder[$newStatus] > $statusOrder[$currentStatus] + 1) {
+                return redirect()->back()->withErrors(['repair_status' => "Lompatan status tidak diizinkan! Harap ikuti alur: Reported -> Order Part -> On Progress -> Resolved."])->withInput();
+            }
+        }
+
         // 3. Logika Upload Bukti Fisik
         if ($request->hasFile('document_proof')) {
-            // Hapus file lama dari storage jika sebelumnya sudah pernah upload
-            if ($log->document_proof) {
-                Storage::disk('public')->delete($log->document_proof);
-            }
+            $file = $request->file('document_proof');
+            $filename = 'proof_' . $log->infrastructure->code_name . '_' . time() . '.' . $file->getClientOriginalExtension();
             // Simpan file baru ke folder public/assets/proofs
-            $dataToUpdate['document_proof'] = $request->file('document_proof')->store('assets/proofs', 'public');
+            $dataToUpdate['document_proof'] = $file->storeAs('assets/proofs', $filename, 'public');
+        }
+
+        if ($request->repair_status === 'resolved') {
+            $dataToUpdate['resolved_at'] = now();
         }
 
         // 4. Update data ke database (Status dan Deretan Tanggal)
@@ -96,29 +146,40 @@ class BreakdownLogController extends Controller
         // 5. Jika status perbaikan "resolved", kembalikan status alat jadi "available"
         if ($request->repair_status === 'resolved') {
             $log->infrastructure->update(['status' => 'available']);
-            return redirect()->back()->with('success', 'Pekerjaan selesai! Alat telah kembali beroperasi (Ready).');
+            return redirect()->back()->with('success', ResponseMessage::BREAKDOWN_RESOLVED);
         } else {
             $log->infrastructure->update(['status' => 'breakdown']);
         }
 
-        return redirect()->back()->with('success', 'Status progres & data tanggal berhasil diperbarui.');
+        return redirect()->back()->with('success', ResponseMessage::BREAKDOWN_UPDATED);
     }
 
     public function destroy($id)
     {
+        $user = auth()->user();
         $log = BreakdownLog::findOrFail($id);
-        
-        // Bersihkan file bukti di storage agar tidak memenuhi harddisk server
-        if ($log->document_proof) {
-            Storage::disk('public')->delete($log->document_proof);
+
+        // Authorization check: Operator cannot delete breakdown log for other entity
+        if ($user->role !== 'superadmin' && $log->infrastructure->entity_id !== $user->entity_id) {
+            abort(403, 'Unauthorized: Anda tidak bisa menghapus laporan dari cabang lain.');
         }
 
-        // Kembalikan status alat jadi available sebelum log dihapus
-        $log->infrastructure->update(['status' => 'available']);
-        
+        // (Soft Deletes: File bukti fisik tidak dihapus dari storage agar tetap tersedia jika data di-restore)
+
+        // CRITICAL FIX: Check if there are other unresolved breakdowns for this infrastructure
+        // Only mark as available if no other active breakdowns exist
+        $otherActiveBreakdowns = BreakdownLog::where('infrastructure_id', $log->infrastructure_id)
+            ->where('id', '!=', $log->id)
+            ->where('repair_status', '!=', 'resolved')
+            ->count();
+
+        if ($otherActiveBreakdowns === 0) {
+            $log->infrastructure->update(['status' => 'available']);
+        }
+
         // Hapus laporan
         $log->delete();
 
-        return redirect()->back()->with('success', 'Laporan beserta lampirannya berhasil dihapus dan status alat dikembalikan ke Ready.');
+        return redirect()->back()->with('success', ResponseMessage::BREAKDOWN_DELETED);
     }
 }

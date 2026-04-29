@@ -17,6 +17,7 @@ class UserSeeder extends Seeder
             'name' => 'Administrator',
             'email' => 'admin@pelindo.co.id',
             'password' => Hash::make('password'), // Password default: password
+            'role' => 'superadmin',
             'email_verified_at' => now(),
         ]);
     }

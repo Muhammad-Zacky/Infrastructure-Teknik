@@ -30,9 +30,11 @@
 
     <div id="main-ui" class="max-w-[1600px] mx-auto w-full space-y-8 pb-16 px-4 pt-8">
 
-        <div class="bg-pelindo rounded-[2rem] p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 animate-fade relative overflow-hidden">
-            <div class="absolute right-0 top-0 opacity-10 -mr-10 -mt-10">
-                <i class="fas fa-chart-line text-[15rem] text-white"></i>
+        <div class="bg-pelindo rounded-[2rem] p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 animate-fade relative z-[60]">
+            <div class="absolute inset-0 overflow-hidden rounded-[2rem] pointer-events-none">
+                <div class="absolute right-0 top-0 opacity-10 -mr-10 -mt-10">
+                    <i class="fas fa-chart-line text-[15rem] text-white"></i>
+                </div>
             </div>
             
             <div class="flex items-center gap-6 relative z-10">

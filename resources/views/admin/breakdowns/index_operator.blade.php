@@ -117,8 +117,8 @@
                 </div>
             </template>
 
-            <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#003366] to-[#0055a4]"></div>
+            <div class="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm relative flex flex-col md:flex-row items-center justify-between gap-6 z-[60]">
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#003366] to-[#0055a4] rounded-t-[2rem]"></div>
                 <div class="flex items-center gap-5">
                     <div class="w-14 h-14 bg-blue-50 text-[#0055a4] rounded-2xl flex items-center justify-center text-2xl border border-blue-100">
                         <i class="fas fa-clipboard-check"></i>
@@ -129,9 +129,19 @@
                     </div>
                 </div>
 
-                <button onclick="exportTableToCSV('Laporan_Kesiapan_Area_{{ date('d_M_Y') }}.csv')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-2 z-10 relative">
-                    <i class="fas fa-file-excel"></i> Export Excel
-                </button>
+                <div class="relative group z-50">
+                    <button class="bg-[#003366] hover:bg-[#002244] text-white px-6 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
+                        <i class="fas fa-file-export"></i> Export <i class="fas fa-chevron-down ml-1 text-[10px]"></i>
+                    </button>
+                    <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right scale-95 group-hover:scale-100 flex flex-col overflow-hidden">
+                        <button onclick="openExportModal('pdf')" class="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-widest transition-colors border-b border-slate-50">
+                            <i class="fas fa-file-pdf text-red-500 text-sm"></i> Format PDF
+                        </button>
+                        <button onclick="openExportModal('excel')" class="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-widest transition-colors">
+                            <i class="fas fa-file-excel text-emerald-500 text-sm"></i> Format Excel
+                        </button>
+                    </div>
+                </div>
             </div>
 
             @if(session('success'))
@@ -256,49 +266,15 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <div class="p-6 border-t border-slate-100 bg-slate-50/50">
+                    {{ $infrastructures->links() }}
+                </div>
             </div>
             
         </div>
     </div>
 
-    <script>
-        function exportTableToCSV(filename) {
-            var csv = [];
-            // Targetkan tabel dengan ID operatorTable
-            var rows = document.querySelectorAll("#operatorTable tr");
-            
-            for (var i = 0; i < rows.length; i++) {
-                var row = [];
-                var cols = rows[i].querySelectorAll("td, th");
-                
-                for (var j = 0; j < cols.length; j++) {
-                    // Abaikan kolom dengan class export-ignore
-                    if (cols[j].classList.contains('export-ignore')) {
-                        continue;
-                    }
-                    
-                    let text = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
-                    text = text.replace(/"/g, '""');
-                    row.push('"' + text + '"');
-                }
-                csv.push(row.join(","));
-            }
-
-            downloadCSV(csv.join("\n"), filename);
-        }
-
-        function downloadCSV(csv, filename) {
-            var csvFile;
-            var downloadLink;
-
-            csvFile = new Blob([csv], {type: "text/csv;charset=utf-8;"});
-            downloadLink = document.createElement("a");
-            downloadLink.download = filename;
-            downloadLink.href = window.URL.createObjectURL(csvFile);
-            downloadLink.style.display = "none";
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-        }
-    </script>
+    <x-export-report :infrastructures="$allInfrastructures" :recentBreakdowns="$recentBreakdowns" />
+    <x-export-filter-modal />
 </x-app-layout>

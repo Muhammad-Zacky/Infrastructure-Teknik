@@ -18,7 +18,8 @@
                             'status' => $item->status ?? 'available',
                             'image' => $item->image ? asset('storage/'.$item->image) : null,
                             'edit_url' => route('admin.infrastructures.edit', $item->id),
-                            'delete_url' => route('admin.infrastructures.destroy', $item->id)
+                            'delete_url' => route('admin.infrastructures.destroy', $item->id),
+                            'updated_by' => optional($item->updatedBy)->name ?? 'System'
                         ];
                     });
                     
@@ -51,48 +52,7 @@
                 }
              }">
 
-            <template x-teleport="body">
-                <div x-show="showDeleteModal" 
-                     x-transition:enter="transition ease-out duration-300"
-                     x-transition:enter-start="opacity-0"
-                     x-transition:enter-end="opacity-100"
-                     x-transition:leave="transition ease-in duration-200"
-                     x-transition:leave-start="opacity-100"
-                     x-transition:leave-end="opacity-0"
-                     class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" style="display:none;">
-                    
-                    <div @click.away="showDeleteModal = false" 
-                         class="bg-white rounded-[2rem] shadow-xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-300">
-                        
-                        <div class="p-8 text-center">
-                            <div class="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 border border-red-100">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            
-                            <h2 class="text-2xl font-black text-[#003366] uppercase tracking-tight mb-2">Konfirmasi Kritis</h2>
-                            <p class="text-sm text-slate-500 font-medium leading-relaxed mb-8">
-                                Anda akan menghapus <strong class="text-red-600">seluruh data</strong> infrastruktur. Tindakan ini akan mengosongkan inventaris secara permanen. Lanjutkan?
-                            </p>
 
-                            <div class="flex flex-col sm:flex-row items-center gap-3">
-                                <button @click="showDeleteModal = false" 
-                                        class="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
-                                    Batal
-                                </button>
-                                
-                                <form action="{{ route('admin.infrastructures.deleteAll') }}" method="POST" class="w-full">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" 
-                                            class="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-md shadow-red-600/20">
-                                        Hapus Semua Data
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
-            
             <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm space-y-8 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#003366] to-[#0055a4]"></div>
 
@@ -108,12 +68,7 @@
                     </div>
                     
                     <div class="flex items-center gap-3">
-                        @if(isset($infrastructures) && $infrastructures->count() > 0 && auth()->user()->role === 'superadmin')
-                            <button @click="showDeleteModal = true" type="button" 
-                                    class="bg-white hover:bg-red-50 text-red-500 px-6 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-slate-200 hover:border-red-200 shadow-sm">
-                                <i class="fas fa-trash-alt"></i> Hapus Semua
-                            </button>
-                        @endif
+                        
 
                         <a href="{{ route('admin.infrastructures.create') }}" class="bg-[#003366] hover:bg-[#001e3c] text-white px-8 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-md shadow-blue-900/10">
                             <i class="fas fa-plus"></i> Tambah Aset
@@ -204,6 +159,10 @@
                                         <td class="px-8 py-5">
                                             <p class="text-xs font-black text-slate-700 uppercase" x-text="item.type"></p>
                                             <p class="text-[9px] font-bold text-slate-400 uppercase mt-0.5" x-text="item.category"></p>
+                                            <div class="flex items-center gap-1.5 mt-2 opacity-60">
+                                                <i class="fas fa-user-edit text-[8px] text-slate-400"></i>
+                                                <p class="text-[8px] font-black tracking-widest text-slate-400 uppercase" x-text="item.updated_by"></p>
+                                            </div>
                                         </td>
                                         <td class="px-8 py-5 text-center">
                                             <template x-if="item.status === 'available'">

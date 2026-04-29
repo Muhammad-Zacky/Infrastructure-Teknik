@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entity;
+use App\Helpers\ResponseMessage;
 use Illuminate\Http\Request;
 
 class EntityController extends Controller
@@ -34,7 +35,7 @@ class EntityController extends Controller
         Entity::create($request->all());
 
         return redirect()->route('admin.entities.index')
-            ->with('success', 'Entitas pelabuhan baru berhasil didaftarkan.');
+            ->with('success', ResponseMessage::ENTITY_CREATED);
     }
 
     // Menampilkan form edit entitas
@@ -54,7 +55,7 @@ class EntityController extends Controller
         $entity->update($request->all());
 
         return redirect()->route('admin.entities.index')
-            ->with('success', 'Data entitas berhasil diperbarui.');
+            ->with('success', ResponseMessage::ENTITY_UPDATED);
     }
 
     // Menghapus entitas
@@ -63,12 +64,12 @@ class EntityController extends Controller
         // Proteksi: Jangan izinkan hapus jika masih ada alat yang terikat ke entitas ini
         if ($entity->infrastructures()->count() > 0) {
             return redirect()->route('admin.entities.index')
-                ->with('error', 'Gagal dihapus! Entitas ini masih memiliki data infrastruktur yang terdaftar.');
+                ->with('error', ResponseMessage::ENTITY_HAS_INFRASTRUCTURE);
         }
-        
+
         $entity->delete();
 
         return redirect()->route('admin.entities.index')
-            ->with('success', 'Entitas pelabuhan telah dihapus dari sistem.');
+            ->with('success', ResponseMessage::ENTITY_DELETED);
     }
 }

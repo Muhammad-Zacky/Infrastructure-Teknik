@@ -1,8 +1,8 @@
 <x-app-layout>
     <div class="max-w-[1600px] mx-auto w-full space-y-8 pb-16 pt-8 px-4 animate-fade-up">
         
-        <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600 to-red-400"></div>
+        <div class="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 shadow-sm relative flex flex-col md:flex-row items-center justify-between gap-6 z-[60]">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600 to-red-400 rounded-t-[2rem]"></div>
             
             <div class="flex items-center gap-5">
                 <div class="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center text-2xl border border-red-100 shadow-inner">
@@ -15,9 +15,19 @@
             </div>
             
             <div class="flex items-center gap-4">
-                <button onclick="exportTableToCSV('Laporan_Kerusakan_DIA_{{ date('d_M_Y') }}.csv')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-2">
-                    <i class="fas fa-file-excel"></i> Export Excel
+            <div class="relative group z-50">
+                <button class="bg-[#003366] hover:bg-[#002244] text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
+                    <i class="fas fa-file-export"></i> Export <i class="fas fa-chevron-down ml-1 text-[10px]"></i>
                 </button>
+                <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right scale-95 group-hover:scale-100 flex flex-col overflow-hidden">
+                    <button onclick="openExportModal('pdf')" class="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-widest transition-colors border-b border-slate-50">
+                        <i class="fas fa-file-pdf text-red-500 text-sm"></i> Format PDF
+                    </button>
+                    <button onclick="openExportModal('excel')" class="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-widest transition-colors">
+                        <i class="fas fa-file-excel text-emerald-500 text-sm"></i> Format Excel
+                    </button>
+                </div>
+            </div>
 
                 <div class="bg-slate-50 px-6 py-3 rounded-xl border border-slate-200 text-center hidden md:block">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Akses Mode</p>
@@ -87,7 +97,12 @@
                             <td class="px-4 py-4 text-center text-[10px] font-bold text-slate-600">{{ $log->com_test_date ? \Carbon\Carbon::parse($log->com_test_date)->format('d/m/y') : '-' }}</td>
                             <td class="px-4 py-4 text-center text-[10px] font-black text-emerald-600">{{ $log->resolved_date ? \Carbon\Carbon::parse($log->resolved_date)->format('d/m/y') : '-' }}</td>
 
-                            <td class="px-4 py-4 text-[10px] font-black text-slate-500 uppercase">{{ $log->vendor_pic ?? 'Internal' }}</td>
+                            <td class="px-4 py-4 text-[10px] font-black text-slate-500 uppercase">
+                                {{ $log->vendor_pic ?? 'Internal' }}
+                                @if($log->updated_by)
+                                    <br><span class="text-[8px] text-slate-400 font-normal lowercase tracking-widest mt-1 inline-block">by {{ $log->updatedBy->name ?? 'System' }}</span>
+                                @endif
+                            </td>
                             
                             <td class="px-4 py-4 text-right export-ignore">
                                 <div class="flex items-center justify-end gap-2">
@@ -120,55 +135,15 @@
                     </tbody>
                 </table>
             </div>
+            
+            <div class="p-6 border-t border-slate-100 bg-slate-50/50">
+                {{ $logs->links() }}
+            </div>
         </div>
     </div>
 
-    <script>
-        function exportTableToCSV(filename) {
-            var csv = [];
-            var rows = document.querySelectorAll("#logTable tr");
-            
-            for (var i = 0; i < rows.length; i++) {
-                var row = [];
-                // Ambil semua kolom (th dan td)
-                var cols = rows[i].querySelectorAll("td, th");
-                
-                for (var j = 0; j < cols.length; j++) {
-                    // Abaikan kolom yang memiliki class 'export-ignore' (Kolom Aksi/Tombol)
-                    if (cols[j].classList.contains('export-ignore')) {
-                        continue;
-                    }
-                    
-                    // Bersihkan teks dari spasi berlebih dan enter
-                    let text = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
-                    // Hilangkan tanda kutip ganda yang mungkin ada
-                    text = text.replace(/"/g, '""');
-                    // Bungkus dengan kutipan agar koma dalam teks tidak merusak format CSV
-                    row.push('"' + text + '"');
-                }
-                csv.push(row.join(","));
-            }
-
-            downloadCSV(csv.join("\n"), filename);
-        }
-
-        function downloadCSV(csv, filename) {
-            var csvFile;
-            var downloadLink;
-
-            // Buat file CSV
-            csvFile = new Blob([csv], {type: "text/csv;charset=utf-8;"});
-
-            // Buat link download tersembunyi
-            downloadLink = document.createElement("a");
-            downloadLink.download = filename;
-            downloadLink.href = window.URL.createObjectURL(csvFile);
-            downloadLink.style.display = "none";
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-        }
-    </script>
+    <x-export-report :infrastructures="$allInfrastructures" :recentBreakdowns="$recentBreakdowns" />
+    <x-export-filter-modal />
 
     <style>
         .hide-scrollbar::-webkit-scrollbar { display: none; }
