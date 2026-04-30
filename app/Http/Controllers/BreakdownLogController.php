@@ -19,14 +19,14 @@ class BreakdownLogController extends Controller
         if ($user->role === 'superadmin') {
             // MAJOR FIX: Add pagination (20 items per page for admin view) and handle soft-deleted infrastructures
             $logs = BreakdownLog::with(['infrastructure' => fn($q) => $q->withTrashed()->with('entity')])->latest()->paginate(20);
-            
+
             // For the export report
             $allInfrastructures = Infrastructure::with('entity')->get();
             $recentBreakdowns = BreakdownLog::with(['infrastructure' => fn($q) => $q->withTrashed()->with('entity')])
                 ->where('repair_status', '!=', 'resolved')
                 ->latest()
                 ->get();
-                
+
             return view('admin.breakdowns.index_admin', compact('logs', 'allInfrastructures', 'recentBreakdowns'));
         }
 
@@ -45,7 +45,7 @@ class BreakdownLogController extends Controller
                 })
                 ->get()
                 ->keyBy('infrastructure_id');
-                
+
             // For the export report
             $allInfrastructures = Infrastructure::with('entity')
                 ->where('entity_id', $user->entity_id)
@@ -60,6 +60,27 @@ class BreakdownLogController extends Controller
 
             return view('admin.breakdowns.index_operator', compact('infrastructures', 'activeBreakdowns', 'allInfrastructures', 'recentBreakdowns'));
         }
+    }
+
+    /**
+     * MENAMPILKAN FORMULIR PELAPORAN INSIDEN (FUNGSI BARU)
+     */
+    public function create()
+    {
+        $user = auth()->user();
+
+        // Ambil infrastruktur yang statusnya masih 'available'
+        // Jika Superadmin, tampilkan semua. Jika bukan, tampilkan yang di entitasnya saja.
+        if ($user->role === 'superadmin') {
+            $infrastructures = Infrastructure::with('entity')->where('status', 'available')->get();
+        } else {
+            $infrastructures = Infrastructure::with('entity')
+                ->where('entity_id', $user->entity_id)
+                ->where('status', 'available')
+                ->get();
+        }
+
+        return view('admin.breakdowns.create', compact('infrastructures'));
     }
 
     public function store(StoreBreakdownLogRequest $request)
@@ -78,7 +99,7 @@ class BreakdownLogController extends Controller
         $activeTicketExists = BreakdownLog::where('infrastructure_id', $infrastructure->id)
             ->where('repair_status', '!=', 'resolved')
             ->exists();
-            
+
         if ($activeTicketExists) {
             return redirect()->back()->withErrors(['infrastructure_id' => 'Aset ini sedang dalam status Breakdown dan memiliki laporan perbaikan yang belum selesai.'])->withInput();
         }
@@ -117,11 +138,11 @@ class BreakdownLogController extends Controller
 
         // Workflow Validation: Strict sequential progression
         $statusOrder = ['reported' => 1, 'order_part' => 2, 'on_progress' => 3, 'resolved' => 4];
-        
+
         if (isset($request->repair_status)) {
             $currentStatus = $log->repair_status;
             $newStatus = $request->repair_status;
-            
+
             // Prevent skipping steps forward
             if ($statusOrder[$newStatus] > $statusOrder[$currentStatus] + 1) {
                 return redirect()->back()->withErrors(['repair_status' => "Lompatan status tidak diizinkan! Harap ikuti alur: Reported -> Order Part -> On Progress -> Resolved."])->withInput();

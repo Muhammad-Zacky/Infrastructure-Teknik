@@ -1,371 +1,319 @@
 <x-app-layout>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        /* Menggunakan font Inter yang merupakan standar de-facto UI Enterprise */
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f4f7fa;
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: #334155;
         }
 
         [x-cloak] { display: none !important; }
 
+        /* Animasi standar korporat (cepat dan tegas) */
         .animate-fade {
-            animation: fadeIn 0.6s ease-out forwards;
+            animation: fadeIn 0.4s ease-out forwards;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .asset-card {
+        /* Card Enterprise Style: Sudut lebih tajam, shadow tipis, border tegas */
+        .ent-card {
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 16px;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .asset-card:hover {
-            box-shadow: 0 12px 20px -5px rgba(0, 51, 102, 0.1);
-            border-color: #0055a4;
-            transform: translateY(-4px);
-        }
-
-        .asset-img-box {
-            width: 100%;
-            aspect-ratio: 4/3;
-            background-color: #f8fafc;
-            border: 1px solid #f1f5f9;
             border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 12px;
-            overflow: hidden;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
         }
 
-        .asset-title-wrapper {
-            min-height: 2.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 12px;
-        }
-
-        .stat-row {
+        .ent-card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 10px;
-            border-radius: 6px;
-            margin-top: 6px;
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
         }
 
-        .stat-available { background-color: #ecfdf5; border: 1px solid #d1fae5; color: #065f46; }
-        .stat-available .badge { background-color: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .ent-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-        .stat-breakdown { background-color: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; }
-        .stat-breakdown .badge { background-color: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .ent-table th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 12px 16px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .ent-table td {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .ent-table tr:hover {
+            background-color: #f8fafc;
+        }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
+
     @php
+        // LOGIKA & RUMUS BARU UNTUK ENTERPRISE DASHBOARD
         $equipment = isset($allInfrastructures) ? $allInfrastructures->where('category', 'equipment') : collect();
         $facility = isset($allInfrastructures) ? $allInfrastructures->where('category', 'facility') : collect();
         $utility = isset($allInfrastructures) ? $allInfrastructures->where('category', 'utility') : collect();
 
-        $groupedEquipment = $equipment->groupBy(fn($i) => $i->entity->name ?? 'Unknown Entity');
-        $groupedFacility = $facility->groupBy(fn($i) => $i->entity->name ?? 'Unknown Entity');
-        $groupedUtility = $utility->groupBy(fn($i) => $i->entity->name ?? 'Unknown Entity');
+        // 1. Rumus Availability Rate (SLA KPI)
+        $totalAssets = $stats['total'] ?? 0;
+        $availableAssets = $stats['available'] ?? 0;
+        $availabilityRate = $totalAssets > 0 ? round(($availableAssets / $totalAssets) * 100, 1) : 0;
 
-        $countEq = $equipment->count();
-        $countFac = $facility->count();
-        $countUtil = $utility->count();
+        // Penentuan Warna SLA
+        $slaColor = $availabilityRate >= 90 ? 'bg-emerald-500' : ($availabilityRate >= 75 ? 'bg-amber-500' : 'bg-red-500');
+
+        // 2. Data Top 5 Entitas dengan Kerusakan Terbanyak (Untuk Horizontal Bar Chart)
+        $entityBreakdowns = isset($allInfrastructures) ? $allInfrastructures->where('status', 'breakdown')->groupBy(fn($i) => $i->entity->name ?? 'Unknown') : collect();
+        $topBrokenEntities = $entityBreakdowns->map->count()->sortByDesc(fn($c) => $c)->take(5);
     @endphp
 
-    <div id="main-ui" class="max-w-[1600px] mx-auto w-full space-y-8 pb-16">
+    <div id="main-ui" class="max-w-[1600px] mx-auto w-full space-y-6 pb-16 px-4 sm:px-6">
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm flex flex-col xl:flex-row items-center justify-between gap-8 animate-fade relative z-[60]">
-            <div class="flex flex-col sm:flex-row items-center text-center sm:text-left gap-6 w-full xl:w-auto">
-                <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <img src="{{ asset('danantara.png') }}" alt="Danantara" class="h-10 md:h-12 object-contain">
-                    <div class="w-px h-10 bg-slate-300"></div>
-                    <img src="{{ asset('pelindo.png') }}" alt="Pelindo" class="h-10 md:h-12 object-contain">
+        <!-- HEADER KORPORAT -->
+        <div class="bg-white border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 rounded-b-lg shadow-sm">
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-4 border-r border-slate-200 pr-6">
+                    <img src="{{ asset('danantara.png') }}" alt="Danantara" class="h-8 object-contain">
+                    <div class="w-px h-6 bg-slate-300"></div>
+                    <img src="{{ asset('pelindo.png') }}" alt="Pelindo" class="h-8 object-contain">
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-[#003366]">Command Center</h1>
+                    <p class="text-[11px] font-medium text-slate-500">Infrastructure Monitoring System</p>
                 </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row flex-wrap justify-center gap-3 w-full xl:w-auto">
-                <div class="relative group z-50 w-full sm:w-auto">
-                    <button class="w-full sm:w-auto justify-center bg-[#003366] hover:bg-[#002244] text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
-                        <i class="fas fa-file-export"></i> Export Laporan <i class="fas fa-chevron-down ml-1"></i>
+            <div class="flex items-center gap-3">
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" @click.away="open = false" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded text-xs font-semibold transition-colors flex items-center gap-2">
+                        <i class="fas fa-print text-slate-400"></i> Generate Report <i class="fas fa-caret-down ml-1"></i>
                     </button>
-                    <div class="absolute left-0 right-0 sm:right-auto xl:right-0 xl:left-auto top-full mt-2 w-full sm:w-48 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top xl:origin-top-right scale-95 group-hover:scale-100 flex flex-col overflow-hidden">
-                        <button onclick="openExportModal('pdf')" class="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 text-slate-700 text-[10px] font-black uppercase tracking-widest transition-colors border-b border-slate-50">
-                            <i class="fas fa-file-pdf text-red-500 text-sm"></i> Format PDF
+                    <div x-show="open" x-transition class="absolute right-0 mt-1 w-40 bg-white rounded shadow-lg border border-slate-200 z-50 py-1">
+                        <button onclick="openExportModal('pdf')" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 flex items-center gap-2">
+                            <i class="fas fa-file-pdf text-red-500 w-4"></i> PDF Document
                         </button>
-                        <button onclick="openExportModal('excel')" class="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 text-slate-700 text-[10px] font-black uppercase tracking-widest transition-colors">
-                            <i class="fas fa-file-excel text-emerald-500 text-sm"></i> Format Excel
+                        <button onclick="openExportModal('excel')" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 flex items-center gap-2">
+                            <i class="fas fa-file-excel text-emerald-500 w-4"></i> Excel Spreadsheet
                         </button>
                     </div>
                 </div>
 
-                <a href="{{ route('admin.infrastructures.create') }}" class="w-full sm:w-auto justify-center bg-[#003366] hover:bg-[#001e3c] text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
-                    <i class="fas fa-plus"></i> Aset Baru
+                <a href="{{ route('admin.breakdowns.create') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-xs font-semibold transition-colors flex items-center gap-2 shadow-sm">
+                    <i class="fas fa-triangle-exclamation"></i> Lapor Insiden
                 </a>
-                <a href="{{ route('admin.breakdowns.create') }}" class="w-full sm:w-auto justify-center bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-900/20 transition-all flex items-center gap-2">
-                    <i class="fas fa-triangle-exclamation"></i> Lapor Kerusakan
+                <a href="{{ route('admin.infrastructures.create') }}" class="bg-[#0055a4] hover:bg-[#004380] text-white px-4 py-2 rounded text-xs font-semibold transition-colors flex items-center gap-2 shadow-sm">
+                    <i class="fas fa-plus"></i> Register Aset
                 </a>
             </div>
         </div>
 
-        <!-- KPI STATS -->
+        <!-- 4 KPI CARDS (Standard Enterprise) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade">
+            <!-- Total Asset -->
+            <div class="ent-card p-5 border-t-4 border-t-[#003366]">
+                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Total Infrastruktur</p>
+                <div class="mt-2 flex justify-between items-end">
+                    <h2 class="text-3xl font-black text-slate-800">{{ $stats['total'] ?? 0 }}</h2>
+                    <i class="fas fa-boxes-stacked text-3xl text-slate-200"></i>
+                </div>
+            </div>
+
+            <!-- Ready -->
+            <div class="ent-card p-5 border-t-4 border-t-emerald-500">
+                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Status Operasional (Ready)</p>
+                <div class="mt-2 flex justify-between items-end">
+                    <h2 class="text-3xl font-black text-emerald-600">{{ $stats['available'] ?? 0 }}</h2>
+                    <i class="fas fa-check-circle text-3xl text-emerald-100"></i>
+                </div>
+            </div>
+
+            <!-- Breakdown -->
+            <div class="ent-card p-5 border-t-4 border-t-red-500">
+                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Dalam Perbaikan (Down)</p>
+                <div class="mt-2 flex justify-between items-end">
+                    <h2 class="text-3xl font-black text-red-600">{{ $stats['breakdown'] ?? 0 }}</h2>
+                    <i class="fas fa-wrench text-3xl text-red-100"></i>
+                </div>
+            </div>
+
+            <!-- RUMUS BARU: Availability Rate -->
+            <div class="ent-card p-5 border-t-4 border-t-blue-400 flex flex-col justify-between">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">SLA Availability Rate</p>
+                    <span class="text-sm font-black text-slate-800">{{ $availabilityRate }}%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2.5 mb-1 overflow-hidden">
+                    <div class="{{ $slaColor }} h-2.5 rounded-full" style="width: {{ $availabilityRate }}%"></div>
+                </div>
+                <p class="text-[10px] text-slate-400 font-medium mt-1">Target Perusahaan: > 90%</p>
+            </div>
+        </div>
+
+        <!-- MAIN ANALYTICS GRID -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade" style="animation-delay: 100ms;">
-            <div class="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between shadow-sm">
-                <div>
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Inventaris</p>
-                    <p class="text-3xl font-black text-[#003366] mt-1">{{ $stats['total'] ?? 0 }} <span class="text-sm text-slate-500 font-bold">Unit</span></p>
-                </div>
-                <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 text-xl border border-slate-100"><i class="fas fa-boxes-stacked"></i></div>
-            </div>
-            
-            <div class="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between shadow-sm border-l-4 border-l-emerald-500">
-                <div>
-                    <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Aset Beroperasi</p>
-                    <p class="text-3xl font-black text-slate-800 mt-1">{{ $stats['available'] ?? 0 }} <span class="text-sm text-slate-500 font-bold">Unit</span></p>
-                </div>
-                <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 text-xl"><i class="fas fa-check-circle"></i></div>
-            </div>
-            
-            <div class="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between shadow-sm border-l-4 border-l-red-500">
-                <div>
-                    <p class="text-[10px] font-black text-red-600 uppercase tracking-widest">Aset Rusak</p>
-                    <p class="text-3xl font-black text-slate-800 mt-1">{{ $stats['breakdown'] ?? 0 }} <span class="text-sm text-slate-500 font-bold">Unit</span></p>
-                </div>
-                <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500 text-xl"><i class="fas fa-engine-warning"></i></div>
-            </div>
-        </div>
 
-        <!-- ANALYTICS CHARTS -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade" style="animation-delay: 150ms;">
-            
-            <!-- Tren Chart (Lebar 2 Kolom) -->
-            <div class="lg:col-span-2 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col">
-                <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <i class="fas fa-chart-line text-[#0055a4]"></i> Tren Laporan Kerusakan (30 Hari Terakhir)
-                </h3>
-                <div class="relative h-64 w-full mt-auto">
+            <!-- Tren Laporan (Line Chart) -->
+            <div class="lg:col-span-2 ent-card flex flex-col">
+                <div class="ent-card-header">
+                    <h3 class="ent-card-title"><i class="fas fa-chart-area text-[#0055a4]"></i> Tren Laporan Insiden (30 Hari)</h3>
+                </div>
+                <div class="p-5 flex-1 relative h-64 w-full">
                     <canvas id="trendChart"></canvas>
                 </div>
             </div>
 
-            <!-- Rasio Kesehatan (1 Kolom) -->
-            <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
-                <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest text-center mb-4 flex items-center justify-center gap-2">
-                    <i class="fas fa-chart-pie text-emerald-500"></i> Rasio Kesiapan Aset
-                </h3>
-                <div class="relative h-48 w-full flex items-center justify-center mt-auto">
+            <!-- Readiness Ratio (Doughnut) -->
+            <div class="ent-card flex flex-col">
+                <div class="ent-card-header">
+                    <h3 class="ent-card-title"><i class="fas fa-chart-pie text-emerald-500"></i> Rasio Kesiapan Alat</h3>
+                </div>
+                <div class="p-5 flex-1 relative h-64 w-full flex items-center justify-center">
                     <canvas id="healthChart"></canvas>
                 </div>
             </div>
-            
+
         </div>
 
-        <div x-data="{ tab: 'equipment' }" class="space-y-6 animate-fade" style="animation-delay: 200ms;">
-            
-            <div class="flex items-center gap-2 border-b border-slate-300 pb-px overflow-x-auto hide-scroll">
-                <button @click="tab = 'equipment'" :class="tab === 'equipment' ? 'border-[#003366] text-[#003366] bg-white shadow-[0_-4px_6px_-4px_rgba(0,0,0,0.1)]' : 'border-transparent text-slate-500 hover:text-slate-700 bg-slate-50'" class="px-6 py-3.5 text-xs font-black uppercase tracking-widest border-t-2 border-x-2 rounded-t-xl transition-all whitespace-nowrap">
-                    <i class="fas fa-truck-loading mr-2"></i> Peralatan ({{ $countEq }})
-                </button>
-                <button @click="tab = 'facility'" :class="tab === 'facility' ? 'border-[#003366] text-[#003366] bg-white shadow-[0_-4px_6px_-4px_rgba(0,0,0,0.1)]' : 'border-transparent text-slate-500 hover:text-slate-700 bg-slate-50'" class="px-6 py-3.5 text-xs font-black uppercase tracking-widest border-t-2 border-x-2 rounded-t-xl transition-all whitespace-nowrap">
-                    <i class="fas fa-building mr-2"></i> Fasilitas ({{ $countFac }})
-                </button>
-                <button @click="tab = 'utility'" :class="tab === 'utility' ? 'border-[#003366] text-[#003366] bg-white shadow-[0_-4px_6px_-4px_rgba(0,0,0,0.1)]' : 'border-transparent text-slate-500 hover:text-slate-700 bg-slate-50'" class="px-6 py-3.5 text-xs font-black uppercase tracking-widest border-t-2 border-x-2 rounded-t-xl transition-all whitespace-nowrap">
-                    <i class="fas fa-bolt mr-2"></i> Utilitas ({{ $countUtil }})
-                </button>
-            </div>
+        <!-- SECONDARY ANALYTICS & WIDGETS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade" style="animation-delay: 150ms;">
 
-            <div x-show="tab === 'equipment'" x-cloak class="space-y-8">
-                @forelse($groupedEquipment as $entityName => $items)
-                    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                        <div class="bg-[#003366] px-6 py-4 text-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                            <h3 class="font-black text-sm uppercase tracking-widest">{{ $entityName }}</h3>
-                        </div>
-                        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            @foreach($items->groupBy('type') as $type => $typeItems)
-                                @php
-                                    $available = $typeItems->where('status', 'available')->count();
-                                    $breakdown = $typeItems->where('status', 'breakdown')->count();
-                                    $repImage = $typeItems->whereNotNull('image')->first();
-                                    $imgPath = $repImage ? ltrim($repImage->image, '/') : '';
-                                @endphp
-                                <div class="asset-card">
-                                    <div class="asset-img-box">
-                                        @if($imgPath)
-                                            <img src="{{ asset('storage/' . $imgPath) }}" 
-                                                 onerror="this.onerror=null; this.src='{{ asset($imgPath) }}';" 
-                                                 class="w-full h-full object-cover" 
-                                                 alt="{{ $type }}">
-                                        @else
-                                            <i class="fas fa-truck text-4xl text-slate-300"></i>
-                                        @endif
-                                    </div>
-                                    <div class="asset-title-wrapper">
-                                        <h4 class="text-[10px] font-black text-slate-800 uppercase text-center line-clamp-2 leading-snug">{{ $type }}</h4>
-                                    </div>
-                                    <div class="mt-auto border-t border-slate-100 pt-3">
-                                        <div class="stat-row stat-available"><span>Tersedia</span><span class="badge">{{ $available }}</span></div>
-                                        <div class="stat-row stat-breakdown"><span>Rusak</span><span class="badge">{{ $breakdown }}</span></div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @empty
-                    <div class="p-16 text-center bg-white border border-slate-200 rounded-2xl"><p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Tidak ada data peralatan</p></div>
-                @endforelse
-            </div>
-
-            <div x-show="tab === 'facility'" x-cloak class="space-y-8">
-                @forelse($groupedFacility as $entityName => $items)
-                    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                        <div class="bg-[#003366] px-6 py-4 text-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                            <h3 class="font-black text-sm uppercase tracking-widest">{{ $entityName }}</h3>
-                        </div>
-                        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            @foreach($items->groupBy('type') as $type => $typeItems)
-                                @php
-                                    $available = $typeItems->where('status', 'available')->count();
-                                    $breakdown = $typeItems->where('status', 'breakdown')->count();
-                                    $repImage = $typeItems->whereNotNull('image')->first();
-                                    $imgPath = $repImage ? ltrim($repImage->image, '/') : '';
-                                @endphp
-                                <div class="asset-card">
-                                    <div class="asset-img-box">
-                                        @if($imgPath)
-                                            <img src="{{ asset('storage/' . $imgPath) }}" 
-                                                 onerror="this.onerror=null; this.src='{{ asset($imgPath) }}';" 
-                                                 class="w-full h-full object-cover" 
-                                                 alt="{{ $type }}">
-                                        @else
-                                            <i class="fas fa-warehouse text-4xl text-slate-300"></i>
-                                        @endif
-                                    </div>
-                                    <div class="asset-title-wrapper"><h4 class="text-[10px] font-black text-slate-800 uppercase text-center line-clamp-2 leading-snug">{{ $type }}</h4></div>
-                                    <div class="mt-auto border-t border-slate-100 pt-3">
-                                        <div class="stat-row stat-available"><span>Ready</span><span class="badge">{{ $available }}</span></div>
-                                        <div class="stat-row stat-breakdown"><span>Issue</span><span class="badge">{{ $breakdown }}</span></div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @empty
-                    <div class="p-16 text-center bg-white border border-slate-200 rounded-2xl"><p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Tidak ada data fasilitas</p></div>
-                @endforelse
-            </div>
-
-            <div x-show="tab === 'utility'" x-cloak class="space-y-8">
-                @forelse($groupedUtility as $entityName => $items)
-                    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                        <div class="bg-[#003366] px-6 py-4 text-white flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                            <h3 class="font-black text-sm uppercase tracking-widest">{{ $entityName }}</h3>
-                        </div>
-                        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            @foreach($items->groupBy('type') as $type => $typeItems)
-                                @php
-                                    $available = $typeItems->where('status', 'available')->count();
-                                    $breakdown = $typeItems->where('status', 'breakdown')->count();
-                                    $repImage = $typeItems->whereNotNull('image')->first();
-                                    $imgPath = $repImage ? ltrim($repImage->image, '/') : '';
-                                @endphp
-                                <div class="asset-card">
-                                    <div class="asset-img-box">
-                                        @if($imgPath)
-                                            <img src="{{ asset('storage/' . $imgPath) }}" 
-                                                 onerror="this.onerror=null; this.src='{{ asset($imgPath) }}';" 
-                                                 class="w-full h-full object-cover" 
-                                                 alt="{{ $type }}">
-                                        @else
-                                            <i class="fas fa-bolt text-4xl text-slate-300"></i>
-                                        @endif
-                                    </div>
-                                    <div class="asset-title-wrapper"><h4 class="text-[10px] font-black text-slate-800 uppercase text-center line-clamp-2 leading-snug">{{ $type }}</h4></div>
-                                    <div class="mt-auto border-t border-slate-100 pt-3">
-                                        <div class="stat-row stat-available"><span>Active</span><span class="badge">{{ $available }}</span></div>
-                                        <div class="stat-row stat-breakdown"><span>Down</span><span class="badge">{{ $breakdown }}</span></div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @empty
-                    <div class="p-16 text-center bg-white border border-slate-200 rounded-2xl"><p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Tidak ada data utilitas</p></div>
-                @endforelse
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm animate-fade" style="animation-delay: 300ms;">
-            <div class="px-6 py-5 bg-[#00152b] flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <i class="fas fa-clipboard-list text-red-500 text-xl"></i>
-                    <div>
-                        <h3 class="text-white font-black uppercase tracking-widest text-sm leading-none">Log Insiden Aktif</h3>
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Status laporan yang belum terselesaikan</p>
-                    </div>
+            <!-- CHART BARU: Top 5 Worst Entities -->
+            <div class="ent-card flex flex-col">
+                <div class="ent-card-header">
+                    <h3 class="ent-card-title"><i class="fas fa-building-flag text-red-500"></i> Top 5 Entitas (Issue Terbanyak)</h3>
                 </div>
-                <a href="{{ route('admin.breakdowns.index') }}" class="hidden sm:block text-[10px] font-black text-blue-400 hover:text-white uppercase tracking-widest transition-colors border border-blue-900/50 hover:border-blue-400 px-4 py-2 rounded-lg">
-                    Kelola Laporan
+                <div class="p-5 flex-1 relative h-64 w-full">
+                    <canvas id="topEntityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Distribusi Kategori (Bar Chart) -->
+            <div class="ent-card flex flex-col">
+                <div class="ent-card-header">
+                    <h3 class="ent-card-title"><i class="fas fa-layer-group text-blue-500"></i> Distribusi Kategori Aset</h3>
+                </div>
+                <div class="p-5 flex-1 relative h-64 w-full">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Widget: Aset Kritis (List) -->
+            <div class="ent-card flex flex-col">
+                <div class="ent-card-header">
+                    <h3 class="ent-card-title text-red-600"><i class="fas fa-engine-warning animate-pulse"></i> Critical Assets (Down)</h3>
+                </div>
+                <div class="flex-1 overflow-y-auto p-0 m-0" style="max-height: 280px;">
+                    @php
+                        $brokenAssets = isset($allInfrastructures) ? $allInfrastructures->where('status', 'breakdown')->sortByDesc('updated_at')->take(5) : collect();
+                    @endphp
+
+                    <ul class="divide-y divide-slate-100">
+                        @forelse($brokenAssets as $broken)
+                            <li class="px-5 py-3 hover:bg-slate-50 transition-colors flex justify-between items-center">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-8 h-8 bg-red-100 text-red-600 rounded flex items-center justify-center text-xs shrink-0">
+                                        <i class="fas {{ $broken->category == 'equipment' ? 'fa-truck-monster' : ($broken->category == 'facility' ? 'fa-warehouse' : 'fa-bolt') }}"></i>
+                                    </div>
+                                    <div class="truncate">
+                                        <p class="text-xs font-bold text-slate-800 truncate" title="{{ $broken->code_name }}">{{ $broken->code_name }}</p>
+                                        <p class="text-[10px] text-slate-500 truncate mt-0.5">{{ $broken->entity->name ?? 'Unknown' }}</p>
+                                    </div>
+                                </div>
+                                <a href="{{ route('admin.infrastructures.index') }}" class="text-[10px] font-bold text-blue-600 hover:underline shrink-0">Detail</a>
+                            </li>
+                        @empty
+                            <li class="px-5 py-8 text-center">
+                                <i class="fas fa-check-circle text-2xl text-emerald-400 mb-2"></i>
+                                <p class="text-xs font-bold text-slate-600">Sistem Normal</p>
+                                <p class="text-[10px] text-slate-400 mt-1">Tidak ada aset berstatus kritis.</p>
+                            </li>
+                        @endforelse
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TABLE: Log Insiden Aktif -->
+        <div class="ent-card animate-fade" style="animation-delay: 200ms;">
+            <div class="ent-card-header bg-[#00152b] border-none rounded-t-lg">
+                <h3 class="ent-card-title text-white"><i class="fas fa-list-check text-blue-400"></i> Ongoing Incident Log</h3>
+                <a href="{{ route('admin.breakdowns.index') }}" class="text-xs text-blue-300 hover:text-white font-medium flex items-center gap-1">
+                    Manage Logs <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[800px]">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left border-collapse ent-table min-w-[900px]">
                     <thead>
-                        <tr class="bg-[#002244] text-slate-300 text-[10px] font-black uppercase tracking-[0.2em]">
-                            <th class="px-8 py-5 w-16 text-center">NO</th>
-                            <th class="px-8 py-5">Entitas Pelabuhan</th>
-                            <th class="px-8 py-5">Identitas Alat</th>
-                            <th class="px-8 py-5">Ringkasan Kendala</th>
-                            <th class="px-8 py-5 text-center">Status</th>
-                            <th class="px-8 py-5">PIC</th>
+                        <tr>
+                            <th class="w-12 text-center">No</th>
+                            <th>Reference ID</th>
+                            <th>Location / Entity</th>
+                            <th>Asset Code</th>
+                            <th>Issue Description</th>
+                            <th>Current Status</th>
+                            <th>PIC/Vendor</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 text-xs font-medium">
+                    <tbody>
                         @forelse($recentLogs ?? [] as $index => $log)
-                        <tr class="hover:bg-slate-50 transition-colors">
-                            <td class="px-8 py-5 text-center text-slate-400 font-bold">{{ $index + 1 }}</td>
-                            <td class="px-8 py-5 text-slate-600 uppercase font-bold">{{ $log->infrastructure->entity->name ?? '-' }}</td>
-                            <td class="px-8 py-5">
-                                <span class="text-[#003366] font-black uppercase bg-blue-50 px-3 py-1.5 rounded border border-blue-100">{{ $log->infrastructure->code_name ?? '-' }}</span>
-                            </td>
-                            <td class="px-8 py-5 text-slate-600 max-w-[200px] truncate" title="{{ $log->issue_detail }}">{{ $log->issue_detail }}</td>
-                            <td class="px-8 py-5 text-center">
+                        <tr>
+                            <td class="text-center text-slate-400">{{ $index + 1 }}</td>
+                            <td class="font-mono text-xs text-slate-500">#INC-{{ str_pad($log->id, 4, '0', STR_PAD_LEFT) }}</td>
+                            <td class="font-semibold">{{ $log->infrastructure->entity->name ?? '-' }}</td>
+                            <td><span class="bg-slate-100 text-[#003366] px-2 py-1 rounded text-xs font-bold font-mono border border-slate-200">{{ $log->infrastructure->code_name ?? '-' }}</span></td>
+                            <td class="max-w-[250px] truncate" title="{{ $log->issue_detail }}">{{ $log->issue_detail }}</td>
+                            <td>
                                 @if($log->repair_status == 'order_part')
-                                    <span class="bg-purple-50 text-purple-600 border border-purple-200 text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">Menunggu Suku Cadang</span>
+                                    <span class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-1 rounded uppercase border border-purple-200">Menunggu Part</span>
                                 @elseif($log->repair_status == 'on_progress')
-                                    <span class="bg-amber-50 text-amber-600 border border-amber-200 text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">Sedang Diperbaiki</span>
+                                    <span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded uppercase border border-amber-200">On Progress</span>
                                 @elseif($log->repair_status == 'reported')
-                                    <span class="bg-red-50 text-red-600 border border-red-200 text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">Dilaporkan</span>
+                                    <span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-1 rounded uppercase border border-red-200">Dilaporkan</span>
                                 @else
-                                    <span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">Selesai</span>
+                                    <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded uppercase border border-emerald-200">Resolved</span>
                                 @endif
                             </td>
-                            <td class="px-8 py-5 text-slate-500 uppercase">{{ $log->vendor_pic ?? '-' }}</td>
+                            <td class="text-xs font-medium">{{ $log->vendor_pic ?? 'Internal' }}</td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="px-8 py-16 text-center text-slate-400">Tidak ada laporan kerusakan alat saat ini.</td></tr>
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-slate-500 text-sm">
+                                <i class="fas fa-folder-open text-3xl mb-3 text-slate-300 block"></i>
+                                Tidak ada log insiden yang sedang aktif.
+                            </td>
+                        </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -374,56 +322,123 @@
 
     </div>
 
-    <!-- Hidden Report Component (for fallback) -->
-    <x-export-report :infrastructures="$allInfrastructures" :recentBreakdowns="$allActiveBreakdowns" />
-    
-    <!-- Export Filter Modal -->
+    <!-- Hidden Export Logic (assuming you have this component or logic) -->
+    <x-export-report :infrastructures="$allInfrastructures ?? collect()" :recentBreakdowns="$allActiveBreakdowns ?? collect()" />
     <x-export-filter-modal />
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const healthCtx = document.getElementById('healthChart').getContext('2d');
-            new Chart(healthCtx, {
+            // Enterprise Chart Configurations
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#64748b';
+            Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+            Chart.defaults.plugins.tooltip.padding = 10;
+            Chart.defaults.plugins.tooltip.cornerRadius = 4;
+
+            // 1. Health Doughnut Chart
+            new Chart(document.getElementById('healthChart').getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['Beroperasi (Ready)', 'Breakdown (Down)'],
+                    labels: ['Ready', 'Down'],
                     datasets: [{
                         data: [{{ $stats['available'] ?? 0 }}, {{ $stats['breakdown'] ?? 0 }}],
                         backgroundColor: ['#10b981', '#ef4444'],
-                        borderWidth: 0,
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
                         hoverOffset: 4
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom' } } }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: {size: 11, weight: '600'} } } } }
             });
 
-            const trendCtx = document.getElementById('trendChart').getContext('2d');
-            new Chart(trendCtx, {
+            // 2. Trend Line Chart
+            new Chart(document.getElementById('trendChart').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: {!! json_encode($chartData['trendLabels']) !!},
+                    labels: {!! json_encode($chartData['trendLabels'] ?? []) !!},
                     datasets: [{
-                        label: 'Laporan Kerusakan',
-                        data: {!! json_encode($chartData['trendCounts']) !!},
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        label: 'Insiden Tercatat',
+                        data: {!! json_encode($chartData['trendCounts'] ?? []) !!},
+                        borderColor: '#0055a4',
+                        backgroundColor: 'rgba(0, 85, 164, 0.1)',
                         borderWidth: 2,
-                        tension: 0.4,
+                        tension: 0.3,
                         fill: true,
                         pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#ef4444',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
+                        pointBorderColor: '#0055a4',
+                        pointRadius: 3
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        x: { grid: { display: false } }
+                        y: { beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { stepSize: 1, font: {size: 10} } },
+                        x: { grid: { display: false }, ticks: { font: {size: 10} } }
+                    }
+                }
+            });
+
+            // 3. Category Bar Chart
+            new Chart(document.getElementById('categoryChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Peralatan', 'Fasilitas', 'Utilitas'],
+                    datasets: [
+                        {
+                            label: 'Ready',
+                            data: [
+                                {{ $equipment->where('status', 'available')->count() }},
+                                {{ $facility->where('status', 'available')->count() }},
+                                {{ $utility->where('status', 'available')->count() }}
+                            ],
+                            backgroundColor: '#10b981',
+                            borderRadius: 2,
+                            barPercentage: 0.5
+                        },
+                        {
+                            label: 'Down',
+                            data: [
+                                {{ $equipment->where('status', 'breakdown')->count() }},
+                                {{ $facility->where('status', 'breakdown')->count() }},
+                                {{ $utility->where('status', 'breakdown')->count() }}
+                            ],
+                            backgroundColor: '#ef4444',
+                            borderRadius: 2,
+                            barPercentage: 0.5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, weight: '500' } } },
+                        y: { stacked: true, beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9' } }
+                    },
+                    plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, font: {size: 11} } } }
+                }
+            });
+
+            // 4. CHART BARU: Horizontal Bar untuk Top 5 Entitas Bermasalah
+            new Chart(document.getElementById('topEntityChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: {!! $topBrokenEntities->keys()->toJson() !!},
+                    datasets: [{
+                        label: 'Total Aset Rusak',
+                        data: {!! $topBrokenEntities->values()->toJson() !!},
+                        backgroundColor: '#ef4444',
+                        borderRadius: 2,
+                        barThickness: 15
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Membuatnya menjadi Horizontal Bar Chart
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { display: false }, ticks: { stepSize: 1, font: {size: 10} } },
+                        y: { grid: { display: false }, ticks: { font: { size: 10, weight: '500' } } }
                     }
                 }
             });
