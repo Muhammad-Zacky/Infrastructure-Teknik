@@ -17,12 +17,12 @@
     </head>
     <body class="font-sans antialiased flex h-screen overflow-hidden bg-[#f4f7fa]">
         
-        <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/60 z-40 hidden lg:hidden opacity-0 transition-opacity duration-300" onclick="toggleSidebar()"></div>
+        <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/60 z-[80] hidden lg:hidden opacity-0 transition-opacity duration-300" onclick="toggleSidebar()"></div>
 
         @include('layouts.sidebar')
 
         <div class="flex-1 flex flex-col h-screen overflow-y-auto relative z-10 sidebar-transition">
-            <header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-slate-200">
+            <header class="bg-white/80 backdrop-blur-md sticky top-0 z-[70] px-6 py-4 flex items-center justify-between border-b border-slate-200">
                 <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-white border border-slate-200 transition-all">
                     <i id="toggle-icon" class="fas fa-bars-staggered"></i>
                 </button>

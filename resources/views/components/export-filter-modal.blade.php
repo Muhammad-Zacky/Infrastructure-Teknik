@@ -54,8 +54,8 @@
                     <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2"><i class="fas fa-heart pulse mr-1"></i> Status Kondisi</label>
                     <select name="status" class="w-full bg-slate-50 border-slate-200 rounded-xl text-xs font-bold focus:ring-[#003366] transition-all text-slate-700">
                         <option value="">-- Semua Status --</option>
-                        <option value="available">Ready (Tersedia)</option>
-                        <option value="breakdown">Breakdown (Rusak/Perbaikan)</option>
+                        <option value="available">Tersedia (Ready)</option>
+                        <option value="breakdown">Rusak (Breakdown)</option>
                     </select>
                 </div>
             </div>

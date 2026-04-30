@@ -13,7 +13,7 @@
     }
 </style>
 
-<aside id="main-sidebar" class="sidebar-transition w-[280px] bg-[#001a33] flex flex-col fixed lg:relative inset-y-0 left-0 z-50 shadow-2xl shrink-0 border-r border-white/5">
+<aside id="main-sidebar" class="sidebar-transition w-[280px] bg-[#001a33] flex flex-col fixed lg:relative inset-y-0 left-0 z-[90] shadow-2xl shrink-0 border-r border-white/5">
     
     <div class="h-24 flex items-center px-8 bg-[#001122] border-b border-white/5">
         <img src="{{ asset('pelindo.png') }}" alt="Pelindo Logo" class="h-8 md:h-9 object-contain filter brightness-110">
@@ -29,23 +29,7 @@
             </a>
         </nav>
 
-        <nav class="space-y-1">
-            <p class="px-8 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Analisa</p>
-            
-            @if(auth()->check() && auth()->user()->role === 'superadmin')
-                <a href="{{ route('admin.analytics.index') }}" 
-                   class="group flex items-center gap-4 px-8 py-3.5 transition-all duration-300 {{ request()->routeIs('admin.analytics.*') ? 'sidebar-link-active' : 'text-slate-400 hover:bg-white/5 hover:text-white' }}">
-                    <i class="fas fa-globe text-sm w-5 text-center {{ request()->routeIs('admin.analytics.*') ? 'text-red-500' : 'text-slate-500 group-hover:text-red-400' }}"></i>
-                    <span class="text-xs font-bold tracking-wide uppercase">Analitik Global</span>
-                </a>
-            @else
-                <a href="{{ route('admin.analytics.index') }}" 
-                   class="group flex items-center gap-4 px-8 py-3.5 transition-all duration-300 {{ request()->routeIs('admin.analytics.*') ? 'sidebar-link-active' : 'text-slate-400 hover:bg-white/5 hover:text-white' }}">
-                    <i class="fas fa-chart-pie text-sm w-5 text-center {{ request()->routeIs('admin.analytics.*') ? 'text-blue-400' : 'text-slate-500 group-hover:text-blue-400' }}"></i>
-                    <span class="text-xs font-bold tracking-wide uppercase">Statistik Cabang</span>
-                </a>
-            @endif
-        </nav>
+
 
         <nav class="space-y-1">
             <p class="px-8 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Operasional</p>

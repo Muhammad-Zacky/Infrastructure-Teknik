@@ -13,9 +13,13 @@ class EntitySeeder extends Seeder
     public function run(): void
     {
         $entities = [
-            ['name' => 'PT TERMINAL PETIKEMAS', 'code' => 'TPK'],
-            ['name' => 'PT PELABUHAN TANJUNG PRIOK', 'code' => 'PTP'],
-            ['name' => 'PT PELINDO JASA MARITIM', 'code' => 'PJM'],
+            ['name' => 'PT Pelabuhan Tanjung Priok', 'code' => 'PTP'],
+            ['name' => 'PT Terminal Petikemas Surabaya', 'code' => 'TPS'],
+            ['name' => 'PT Berlian Jasa Terminal Indonesia', 'code' => 'BJTI'],
+            ['name' => 'PT Pelindo Jasa Maritim', 'code' => 'PJM'],
+            ['name' => 'PT Pelindo Multi Terminal', 'code' => 'SPMT'],
+            ['name' => 'Pelabuhan Belawan', 'code' => 'BLW'],
+            ['name' => 'Pelabuhan Makassar', 'code' => 'MKS'],
         ];
 
         foreach ($entities as $entity) {

@@ -106,7 +106,7 @@
 </head>
 <body class="min-h-screen flex flex-col" x-data="{ filter: 'all' }">
 
-    <nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 shadow-sm">
+    <nav class="bg-white/90 backdrop-blur-md sticky top-0 z-[70] border-b border-slate-200 shadow-sm">
         <div class="max-w-[1600px] mx-auto px-4 md:px-10 h-16 md:h-20 flex items-center justify-between">
             <div class="flex items-center gap-3 md:gap-6">
                 <img src="{{ asset('danantara.png') }}" alt="Danantara" class="h-6 md:h-10 object-contain">
@@ -131,8 +131,8 @@
 
         <div class="text-center py-4 md:py-8 animate-fade-up">
             <h1 class="text-3xl md:text-5xl font-black text-[#003366] uppercase tracking-tight leading-tight">
-                Dashboard Infrastructure <br>
-                <span class="text-[#0055a4]">Availability</span>
+                Dasbor Kesiapan <br>
+                <span class="text-[#0055a4]">Infrastruktur</span>
             </h1>
             <p class="mt-3 md:mt-4 text-xs md:text-sm font-bold text-slate-500 tracking-widest uppercase">Pelindo Regional Group</p>
             
@@ -141,7 +141,7 @@
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2.5 w-2.5 md:h-3 md:w-3 bg-emerald-500"></span>
                 </span>
-                Update : {{ now()->format('d M Y - H:i') }}
+                Diperbarui : {{ now()->format('d M Y - H:i') }}
             </div>
 
             <div class="mt-8 md:mt-10 overflow-x-auto hide-scrollbar pb-2 px-2 -mx-4 md:mx-0">
@@ -193,7 +193,13 @@
                                                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                  alt="{{ $type }}">
                                         @else
-                                            <i class="fas fa-truck-loading text-4xl md:text-5xl text-slate-300 transition-transform duration-500 group-hover:scale-110"></i>
+                                            @if($itemCategory === 'equipment')
+                                                <i class="fas fa-truck text-4xl md:text-5xl text-slate-300 transition-transform duration-500 group-hover:scale-110 group-hover:text-blue-400"></i>
+                                            @elseif($itemCategory === 'facility')
+                                                <i class="fas fa-building text-4xl md:text-5xl text-slate-300 transition-transform duration-500 group-hover:scale-110 group-hover:text-blue-400"></i>
+                                            @else
+                                                <i class="fas fa-bolt text-4xl md:text-5xl text-slate-300 transition-transform duration-500 group-hover:scale-110 group-hover:text-blue-400"></i>
+                                            @endif
                                         @endif
                                     </div>
 
@@ -201,11 +207,11 @@
                                     
                                     <div class="mt-auto border-t border-slate-100 pt-3 md:pt-4">
                                         <div class="stat-row stat-available">
-                                            <span class="stat-label">Ready</span>
+                                            <span class="stat-label">Tersedia (Ready)</span>
                                             <span class="stat-value">{{ $availableQty }}</span>
                                         </div>
                                         <div class="stat-row stat-breakdown">
-                                            <span class="stat-label">Down</span>
+                                            <span class="stat-label">Rusak (Down)</span>
                                             <span class="stat-value">{{ $breakdownQty }}</span>
                                         </div>
                                     </div>
@@ -253,9 +259,9 @@
                                                     <td class="px-5 py-3 text-slate-500 uppercase text-[10px] tracking-widest">{{ $asset->category }}</td>
                                                     <td class="px-5 py-3 text-center">
                                                         @if($asset->status == 'available')
-                                                            <span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-black uppercase">Ready</span>
+                                                            <span class="px-2 py-1 rounded bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-black uppercase">Tersedia</span>
                                                         @else
-                                                            <span class="px-2 py-1 rounded bg-red-50 text-red-600 border border-red-100 text-[9px] font-black uppercase">Breakdown</span>
+                                                            <span class="px-2 py-1 rounded bg-red-50 text-red-600 border border-red-100 text-[9px] font-black uppercase">Rusak</span>
                                                         @endif
                                                     </td>
                                                 </tr>
@@ -311,8 +317,18 @@
                             </td>
                             <td class="px-5 py-4 md:px-8 md:py-5 text-slate-500 lowercase first-letter:uppercase font-medium italic max-w-xs truncate" title="{{ $log->issue_detail }}">{{ $log->issue_detail }}</td>
                             <td class="px-5 py-4 md:px-8 md:py-5 text-center">
-                                <span class="bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-[8px] md:text-[9px] font-black border border-red-100">
-                                    {{ str_replace('_', ' ', $log->repair_status) }}
+                                @php
+                                    $statusConfig = [
+                                        'reported' => ['bg' => 'bg-red-50', 'text' => 'text-red-600', 'border' => 'border-red-200', 'icon' => 'fa-exclamation-circle', 'label' => 'Dilaporkan'],
+                                        'order_part' => ['bg' => 'bg-purple-50', 'text' => 'text-purple-600', 'border' => 'border-purple-200', 'icon' => 'fa-box-open', 'label' => 'Menunggu Suku Cadang'],
+                                        'on_progress' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-600', 'border' => 'border-amber-200', 'icon' => 'fa-tools', 'label' => 'Sedang Diperbaiki'],
+                                        'resolved' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-600', 'border' => 'border-emerald-200', 'icon' => 'fa-check-circle', 'label' => 'Selesai']
+                                    ];
+                                    $conf = $statusConfig[$log->repair_status] ?? $statusConfig['reported'];
+                                @endphp
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded {{ $conf['bg'] }} {{ $conf['text'] }} border {{ $conf['border'] }} text-[8px] md:text-[9px] font-black uppercase tracking-widest whitespace-nowrap">
+                                    <i class="fas {{ $conf['icon'] }}"></i>
+                                    {{ $conf['label'] }}
                                 </span>
                             </td>
                             <td class="px-5 py-4 md:px-8 md:py-5 text-slate-500"><i class="fas fa-user-gear mr-2 opacity-30"></i>{{ $log->vendor_pic ?? '-' }}</td>

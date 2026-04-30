@@ -202,8 +202,17 @@
 
                                     <td class="px-4 py-4 text-center">
                                         @if($activeLog)
-                                            <span class="px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest bg-slate-200 text-slate-700 border border-slate-300">
-                                                {{ str_replace('_', ' ', $activeLog->repair_status) }}
+                                            @php
+                                                $statusConfig = [
+                                                    'reported' => ['bg' => 'bg-red-50', 'text' => 'text-red-600', 'border' => 'border-red-200', 'label' => 'Dilaporkan'],
+                                                    'order_part' => ['bg' => 'bg-purple-50', 'text' => 'text-purple-600', 'border' => 'border-purple-200', 'label' => 'Menunggu Suku Cadang'],
+                                                    'on_progress' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-600', 'border' => 'border-amber-200', 'label' => 'Sedang Diperbaiki'],
+                                                    'resolved' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'border' => 'border-emerald-200', 'label' => 'Selesai']
+                                                ];
+                                                $conf = $statusConfig[$activeLog->repair_status] ?? $statusConfig['reported'];
+                                            @endphp
+                                            <span class="{{ $conf['bg'] }} {{ $conf['text'] }} border {{ $conf['border'] }} px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest whitespace-nowrap">
+                                                {{ $conf['label'] }}
                                             </span>
                                         @else
                                             <span class="text-slate-300">-</span>

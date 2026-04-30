@@ -106,12 +106,12 @@
                 </div>
             </div>
 
-            <div class="flex flex-wrap justify-center gap-3 w-full xl:w-auto">
-                <div class="relative group z-50">
-                    <button class="bg-[#003366] hover:bg-[#002244] text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
+            <div class="flex flex-col sm:flex-row flex-wrap justify-center gap-3 w-full xl:w-auto">
+                <div class="relative group z-50 w-full sm:w-auto">
+                    <button class="w-full sm:w-auto justify-center bg-[#003366] hover:bg-[#002244] text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
                         <i class="fas fa-file-export"></i> Export Laporan <i class="fas fa-chevron-down ml-1"></i>
                     </button>
-                    <div class="absolute left-0 xl:right-0 xl:left-auto top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top xl:origin-top-right scale-95 group-hover:scale-100 flex flex-col overflow-hidden">
+                    <div class="absolute left-0 right-0 sm:right-auto xl:right-0 xl:left-auto top-full mt-2 w-full sm:w-48 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top xl:origin-top-right scale-95 group-hover:scale-100 flex flex-col overflow-hidden">
                         <button onclick="openExportModal('pdf')" class="flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 text-slate-700 text-[10px] font-black uppercase tracking-widest transition-colors border-b border-slate-50">
                             <i class="fas fa-file-pdf text-red-500 text-sm"></i> Format PDF
                         </button>
@@ -121,54 +121,65 @@
                     </div>
                 </div>
 
-                <a href="{{ route('admin.infrastructures.create') }}" class="bg-[#003366] hover:bg-[#001e3c] text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
+                <a href="{{ route('admin.infrastructures.create') }}" class="w-full sm:w-auto justify-center bg-[#003366] hover:bg-[#001e3c] text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2">
                     <i class="fas fa-plus"></i> Aset Baru
                 </a>
-                <a href="{{ route('admin.breakdowns.create') }}" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-900/20 transition-all flex items-center gap-2">
+                <a href="{{ route('admin.breakdowns.create') }}" class="w-full sm:w-auto justify-center bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-amber-900/20 transition-all flex items-center gap-2">
                     <i class="fas fa-triangle-exclamation"></i> Lapor Kerusakan
                 </a>
             </div>
         </div>
 
+        <!-- KPI STATS -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade" style="animation-delay: 100ms;">
-            <div class="space-y-6">
-                <div class="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between shadow-sm">
-                    <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Inventaris</p>
-                        <p class="text-3xl font-black text-[#003366] mt-1">{{ $stats['total'] ?? 0 }} <span class="text-sm text-slate-500 font-bold">Unit</span></p>
-                    </div>
-                    <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 text-xl border border-slate-100"><i class="fas fa-boxes-stacked"></i></div>
+            <div class="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between shadow-sm">
+                <div>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Inventaris</p>
+                    <p class="text-3xl font-black text-[#003366] mt-1">{{ $stats['total'] ?? 0 }} <span class="text-sm text-slate-500 font-bold">Unit</span></p>
                 </div>
-                <div class="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between shadow-sm border-l-4 border-l-emerald-500">
-                    <div>
-                        <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Aset Beroperasi</p>
-                        <p class="text-3xl font-black text-slate-800 mt-1">{{ $stats['available'] ?? 0 }} <span class="text-sm text-slate-500 font-bold">Unit</span></p>
-                    </div>
-                    <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 text-xl"><i class="fas fa-check-circle"></i></div>
+                <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 text-xl border border-slate-100"><i class="fas fa-boxes-stacked"></i></div>
+            </div>
+            
+            <div class="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between shadow-sm border-l-4 border-l-emerald-500">
+                <div>
+                    <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Aset Beroperasi</p>
+                    <p class="text-3xl font-black text-slate-800 mt-1">{{ $stats['available'] ?? 0 }} <span class="text-sm text-slate-500 font-bold">Unit</span></p>
                 </div>
-                <div class="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between shadow-sm border-l-4 border-l-red-500">
-                    <div>
-                        <p class="text-[10px] font-black text-red-600 uppercase tracking-widest">Breakdown / Rusak</p>
-                        <p class="text-3xl font-black text-slate-800 mt-1">{{ $stats['breakdown'] ?? 0 }} <span class="text-sm text-slate-500 font-bold">Unit</span></p>
-                    </div>
-                    <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500 text-xl"><i class="fas fa-engine-warning"></i></div>
+                <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 text-xl"><i class="fas fa-check-circle"></i></div>
+            </div>
+            
+            <div class="bg-white border border-slate-200 p-6 rounded-2xl flex items-center justify-between shadow-sm border-l-4 border-l-red-500">
+                <div>
+                    <p class="text-[10px] font-black text-red-600 uppercase tracking-widest">Aset Rusak</p>
+                    <p class="text-3xl font-black text-slate-800 mt-1">{{ $stats['breakdown'] ?? 0 }} <span class="text-sm text-slate-500 font-bold">Unit</span></p>
+                </div>
+                <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500 text-xl"><i class="fas fa-engine-warning"></i></div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS CHARTS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade" style="animation-delay: 150ms;">
+            
+            <!-- Tren Chart (Lebar 2 Kolom) -->
+            <div class="lg:col-span-2 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col">
+                <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <i class="fas fa-chart-line text-[#0055a4]"></i> Tren Laporan Kerusakan (30 Hari Terakhir)
+                </h3>
+                <div class="relative h-64 w-full mt-auto">
+                    <canvas id="trendChart"></canvas>
                 </div>
             </div>
 
-            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-center">
-                    <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest text-center mb-4">Rasio Kesiapan Alat (Readiness)</h3>
-                    <div class="relative h-48 w-full flex items-center justify-center">
-                        <canvas id="healthChart"></canvas>
-                    </div>
-                </div>
-                <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-center">
-                    <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest text-center mb-4">Distribusi Kategori Aset</h3>
-                    <div class="relative h-48 w-full">
-                        <canvas id="categoryChart"></canvas>
-                    </div>
+            <!-- Rasio Kesehatan (1 Kolom) -->
+            <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+                <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest text-center mb-4 flex items-center justify-center gap-2">
+                    <i class="fas fa-chart-pie text-emerald-500"></i> Rasio Kesiapan Aset
+                </h3>
+                <div class="relative h-48 w-full flex items-center justify-center mt-auto">
+                    <canvas id="healthChart"></canvas>
                 </div>
             </div>
+            
         </div>
 
         <div x-data="{ tab: 'equipment' }" class="space-y-6 animate-fade" style="animation-delay: 200ms;">
@@ -207,15 +218,15 @@
                                                  class="w-full h-full object-cover" 
                                                  alt="{{ $type }}">
                                         @else
-                                            <i class="fas fa-truck-monster text-4xl text-slate-300"></i>
+                                            <i class="fas fa-truck text-4xl text-slate-300"></i>
                                         @endif
                                     </div>
                                     <div class="asset-title-wrapper">
                                         <h4 class="text-[10px] font-black text-slate-800 uppercase text-center line-clamp-2 leading-snug">{{ $type }}</h4>
                                     </div>
                                     <div class="mt-auto border-t border-slate-100 pt-3">
-                                        <div class="stat-row stat-available"><span>Available</span><span class="badge">{{ $available }}</span></div>
-                                        <div class="stat-row stat-breakdown"><span>Breakdown</span><span class="badge">{{ $breakdown }}</span></div>
+                                        <div class="stat-row stat-available"><span>Tersedia</span><span class="badge">{{ $available }}</span></div>
+                                        <div class="stat-row stat-breakdown"><span>Rusak</span><span class="badge">{{ $breakdown }}</span></div>
                                     </div>
                                 </div>
                             @endforeach
@@ -342,11 +353,13 @@
                             <td class="px-8 py-5 text-slate-600 max-w-[200px] truncate" title="{{ $log->issue_detail }}">{{ $log->issue_detail }}</td>
                             <td class="px-8 py-5 text-center">
                                 @if($log->repair_status == 'order_part')
-                                    <span class="bg-[#ef4444] text-white text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">Order Part</span>
+                                    <span class="bg-purple-50 text-purple-600 border border-purple-200 text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">Menunggu Suku Cadang</span>
                                 @elseif($log->repair_status == 'on_progress')
-                                    <span class="bg-[#f59e0b] text-white text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">On Progress</span>
+                                    <span class="bg-amber-50 text-amber-600 border border-amber-200 text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">Sedang Diperbaiki</span>
+                                @elseif($log->repair_status == 'reported')
+                                    <span class="bg-red-50 text-red-600 border border-red-200 text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">Dilaporkan</span>
                                 @else
-                                    <span class="bg-slate-200 text-slate-600 text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest">{{ str_replace('_', ' ', $log->repair_status) }}</span>
+                                    <span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-black px-3 py-1.5 rounded-md uppercase tracking-widest shadow-sm">Selesai</span>
                                 @endif
                             </td>
                             <td class="px-8 py-5 text-slate-500 uppercase">{{ $log->vendor_pic ?? '-' }}</td>
@@ -384,19 +397,35 @@
                 options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom' } } }
             });
 
-            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-            new Chart(categoryCtx, {
-                type: 'bar',
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            new Chart(trendCtx, {
+                type: 'line',
                 data: {
-                    labels: ['Peralatan', 'Fasilitas', 'Utilitas'],
+                    labels: {!! json_encode($chartData['trendLabels']) !!},
                     datasets: [{
-                        label: 'Total Unit',
-                        data: [{{ $countEq }}, {{ $countFac }}, {{ $countUtil }}],
-                        backgroundColor: '#0055a4',
-                        borderRadius: 6
+                        label: 'Laporan Kerusakan',
+                        data: {!! json_encode($chartData['trendCounts']) !!},
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#ef4444',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        x: { grid: { display: false } }
+                    }
+                }
             });
         });
     </script>

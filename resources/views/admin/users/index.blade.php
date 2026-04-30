@@ -78,6 +78,16 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3 shadow-sm animate-fade-in">
+                <i class="fas fa-exclamation-triangle text-red-600 mt-0.5"></i>
+                <div>
+                    <h3 class="text-sm font-bold text-red-800">Gagal</h3>
+                    <p class="text-sm text-red-700 mt-0.5">{{ session('error') }}</p>
+                </div>
+            </div>
+        @endif
+
         @php
             // Mengelompokkan koleksi users berdasarkan field 'role'
             $groupedUsers = collect($users)->groupBy('role');

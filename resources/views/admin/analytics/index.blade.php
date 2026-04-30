@@ -37,29 +37,29 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-6 relative z-10">
-                <div class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl text-white border border-white/30">
+            <div class="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 md:gap-6 relative z-10">
+                <div class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl text-white border border-white/30 shrink-0">
                     <i class="fas fa-analytics"></i>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-black text-white uppercase tracking-tight">Analytics Center</h1>
+                    <h1 class="text-2xl md:text-3xl font-black text-white uppercase tracking-tight">Pusat Analitik</h1>
                     <p class="text-blue-100 text-xs font-bold uppercase tracking-widest mt-1">
                         {{ $user->role === 'superadmin' ? 'Monitoring Performa Seluruh Cabang' : 'Statistik Detail ' . $chartData['entity_name'] }}
                     </p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-4 relative z-10">
-                <div x-data="{ open: false }" class="relative">
-                    <button @click="open = !open" @click.away="open = false" class="bg-white text-pelindo px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all hover:bg-blue-50 flex items-center gap-3">
-                        <i class="fas fa-file-export"></i> Download Report <i class="fas fa-chevron-down opacity-50"></i>
+            <div class="flex flex-col sm:flex-row items-center gap-4 relative z-10 w-full md:w-auto">
+                <div x-data="{ open: false }" class="relative w-full sm:w-auto">
+                    <button @click="open = !open" @click.away="open = false" class="w-full sm:w-auto justify-center bg-white text-pelindo px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all hover:bg-blue-50 flex items-center gap-3">
+                        <i class="fas fa-file-export"></i> Unduh Laporan <i class="fas fa-chevron-down opacity-50"></i>
                     </button>
-                    <div x-show="open" x-transition class="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                    <div x-show="open" x-transition class="absolute left-0 right-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
                         <button onclick="exportToExcel()" class="w-full text-left px-5 py-4 text-[10px] font-black uppercase text-slate-600 hover:bg-blue-50 transition-colors flex items-center gap-3">
-                            <i class="fas fa-file-excel text-emerald-500"></i> Export to Excel
+                            <i class="fas fa-file-excel text-emerald-500"></i> Format Excel
                         </button>
                         <button onclick="exportToPDF()" class="w-full text-left px-5 py-4 text-[10px] font-black uppercase text-slate-600 hover:bg-blue-50 transition-colors flex items-center gap-3 border-t border-slate-50">
-                            <i class="fas fa-file-pdf text-red-500"></i> Export to PDF
+                            <i class="fas fa-file-pdf text-red-500"></i> Format PDF
                         </button>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
 
             <div class="card-stats p-8">
                 <div class="mb-8">
-                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest">Readiness Ratio</h3>
+                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest">Rasio Kesiapan</h3>
                     <p class="text-[10px] text-slate-400 font-bold uppercase mt-1 text-center">Persentase Kesiapan Aset</p>
                 </div>
                 <div class="h-64 w-full flex items-center justify-center relative">
@@ -93,11 +93,11 @@
                 </div>
                 <div class="mt-6 grid grid-cols-2 gap-4">
                     <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-center">
-                        <p class="text-[9px] font-black text-emerald-600 uppercase">Ready</p>
+                        <p class="text-[9px] font-black text-emerald-600 uppercase">Tersedia</p>
                         <p class="text-lg font-black text-emerald-700">{{ array_sum($chartData['ready']) }}</p>
                     </div>
                     <div class="bg-red-50 p-3 rounded-xl border border-red-100 text-center">
-                        <p class="text-[9px] font-black text-red-600 uppercase">Down</p>
+                        <p class="text-[9px] font-black text-red-600 uppercase">Rusak</p>
                         <p class="text-lg font-black text-red-700">{{ array_sum($chartData['breakdown']) }}</p>
                     </div>
                 </div>
@@ -118,7 +118,7 @@
         <div class="card-stats overflow-hidden animate-fade shadow-sm" style="animation-delay: 350ms;">
             <div class="px-8 py-6 bg-[#00152b] border-b border-slate-800 flex items-center gap-4">
                 <i class="fas fa-book-spells text-blue-400"></i>
-                <h3 class="text-white font-black uppercase tracking-widest text-sm leading-none">Logbook Pemeliharaan Unit</h3>
+                <h3 class="text-white font-black uppercase tracking-widest text-sm leading-none">Buku Log Pemeliharaan Alat</h3>
             </div>
 
             <div class="divide-y divide-slate-100">
@@ -127,7 +127,7 @@
                         <button @click="open = !open" class="w-full px-8 py-5 flex items-center justify-between hover:bg-slate-50 transition-all">
                             <div class="flex items-center gap-6">
                                 <div class="w-12 h-12 rounded-2xl bg-slate-50 text-pelindo border border-slate-200 flex items-center justify-center text-lg group-hover:bg-pelindo group-hover:text-white group-hover:border-pelindo transition-all">
-                                    <i class="fas {{ $item->category == 'equipment' ? 'fa-truck-container' : 'fa-building-columns' }}"></i>
+                                    <i class="fas {{ $item->category == 'equipment' ? 'fa-truck' : 'fa-building-columns' }}"></i>
                                 </div>
                                 <div class="text-left">
                                     <p class="text-[10px] font-black text-pelindo uppercase tracking-widest">{{ $item->code_name }}</p>
@@ -163,7 +163,16 @@
                                                 <td class="px-6 py-4 font-bold text-slate-600">{{ $log->created_at->format('d/m/Y') }}</td>
                                                 <td class="px-6 py-4 text-slate-500">{{ $log->issue_detail }}</td>
                                                 <td class="px-6 py-4">
-                                                    <span class="px-2 py-1 rounded bg-slate-100 text-slate-600 text-[9px] font-black uppercase">{{ str_replace('_', ' ', $log->repair_status) }}</span>
+                                                    @php
+                                                        $statusConfig = [
+                                                            'reported' => 'Dilaporkan',
+                                                            'order_part' => 'Menunggu Suku Cadang',
+                                                            'on_progress' => 'Sedang Diperbaiki',
+                                                            'resolved' => 'Selesai'
+                                                        ];
+                                                        $label = $statusConfig[$log->repair_status] ?? $log->repair_status;
+                                                    @endphp
+                                                    <span class="px-2 py-1 rounded bg-slate-100 text-slate-600 text-[9px] font-black uppercase">{{ $label }}</span>
                                                 </td>
                                                 <td class="px-6 py-4 font-bold text-pelindo uppercase">{{ $log->vendor_pic }}</td>
                                             </tr>

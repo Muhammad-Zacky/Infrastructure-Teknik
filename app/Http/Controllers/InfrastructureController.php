@@ -16,14 +16,13 @@ class InfrastructureController extends Controller
         $user = auth()->user();
 
         // Tampilkan semua untuk superadmin, filter berdasarkan cabang untuk operator
-        // MAJOR FIX: Add pagination (15 items per page)
         if ($user->role === 'superadmin') {
-            $infrastructures = Infrastructure::with('entity')->latest()->paginate(15);
+            $infrastructures = Infrastructure::with('entity')->latest()->get();
         } else {
             $infrastructures = Infrastructure::with('entity')
                 ->where('entity_id', $user->entity_id)
                 ->latest()
-                ->paginate(15);
+                ->get();
         }
 
         return view('admin.infrastructures.index', compact('infrastructures'));

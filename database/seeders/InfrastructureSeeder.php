@@ -5,41 +5,65 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Infrastructure;
 use App\Models\Entity;
+use Faker\Factory as Faker;
 
 class InfrastructureSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $tpk = Entity::where('code', 'TPK')->first();
-        $ptp = Entity::where('code', 'PTP')->first();
-        $pjm = Entity::where('code', 'PJM')->first();
-
-        $infrastructures = [
-            // --- PT TERMINAL PETIKEMAS (EQUIPMENT) ---
-            ['entity_id' => $tpk->id, 'category' => 'equipment', 'type' => 'Gantry Luffing Crane', 'code_name' => 'GLC-01', 'status' => 'breakdown'],
-            ['entity_id' => $tpk->id, 'category' => 'equipment', 'type' => 'Gantry Luffing Crane', 'code_name' => 'GLC-02', 'status' => 'available'],
-            ['entity_id' => $tpk->id, 'category' => 'equipment', 'type' => 'Rubber Tired Gantry', 'code_name' => 'RTG-01', 'status' => 'available'],
-            ['entity_id' => $tpk->id, 'category' => 'equipment', 'type' => 'Reach Stacker', 'code_name' => 'RS-01', 'status' => 'available'],
-            ['entity_id' => $tpk->id, 'category' => 'equipment', 'type' => 'Head Truck', 'code_name' => 'HT-01', 'status' => 'available'],
-            ['entity_id' => $tpk->id, 'category' => 'equipment', 'type' => 'Chassis Trailer', 'code_name' => 'CH-01', 'status' => 'available'],
-            ['entity_id' => $tpk->id, 'category' => 'equipment', 'type' => 'Forklift', 'code_name' => 'FL-01', 'status' => 'available'],
-            
-            // --- PT PELABUHAN TANJUNG PRIOK (EQUIPMENT & FACILITY) ---
-            ['entity_id' => $ptp->id, 'category' => 'equipment', 'type' => 'Excavator', 'code_name' => 'EXC-01', 'status' => 'available'],
-            ['entity_id' => $ptp->id, 'category' => 'equipment', 'type' => 'Wheel Loader', 'code_name' => 'WL-01', 'status' => 'available'],
-            ['entity_id' => $ptp->id, 'category' => 'facility', 'type' => 'Gudang Penumpukan', 'code_name' => 'GDG-A', 'status' => 'available'],
-            ['entity_id' => $ptp->id, 'category' => 'utility', 'type' => 'Genset Utama', 'code_name' => 'GEN-01', 'status' => 'breakdown'],
-
-            // --- PT PELINDO JASA MARITIM (EQUIPMENT) ---
-            ['entity_id' => $pjm->id, 'category' => 'equipment', 'type' => 'Kapal Tunda', 'code_name' => 'KT-01', 'status' => 'available'],
-            ['entity_id' => $pjm->id, 'category' => 'equipment', 'type' => 'Kapal Pandu', 'code_name' => 'KP-01', 'status' => 'available'],
+        $faker = Faker::create('id_ID');
+        $entities = Entity::all();
+        
+        $categories = [
+            'equipment' => [
+                'Gantry Luffing Crane', 'Rubber Tired Gantry', 'Reach Stacker', 
+                'Head Truck', 'Chassis Trailer', 'Forklift', 'Excavator', 
+                'Wheel Loader', 'Mobile Crane', 'Straddle Carrier',
+                'Quay Crane', 'Harbour Mobile Crane', 'Towing Tractor'
+            ],
+            'facility' => [
+                'Gudang Penumpukan', 'Silo', 'Tangki Timbun', 'Lapangan Penumpukan',
+                'Area Konsolidasi', 'Gedung Operasional', 'Pos Jaga', 'Workshop Alat Berat',
+                'Dermaga', 'Fasilitas Air Bersih'
+            ],
+            'utility' => [
+                'Genset Utama', 'Genset Cadangan', 'Sistem Pompa Air', 'Gardu Listrik',
+                'Panel Distribusi', 'Sistem Kompresor', 'Penerangan Jalan', 'Sistem Pemadam Kebakaran'
+            ]
         ];
 
-        foreach ($infrastructures as $infra) {
-            Infrastructure::create($infra);
+        $infrastructures = [];
+        
+        foreach ($entities as $entity) {
+            // Berikan 10-25 aset per entitas
+            $assetCount = rand(10, 25);
+            
+            for ($i = 0; $i < $assetCount; $i++) {
+                $category = $faker->randomElement(array_keys($categories));
+                $type = $faker->randomElement($categories[$category]);
+                
+                // Buat kode unik
+                $prefix = strtoupper(substr(str_replace(' ', '', $type), 0, 3));
+                $codeName = $prefix . '-' . $entity->code . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
+                
+                // 15% kemungkinan rusak
+                $status = (rand(1, 100) <= 15) ? 'breakdown' : 'available';
+
+                $infrastructures[] = [
+                    'entity_id' => $entity->id,
+                    'category' => $category,
+                    'type' => $type,
+                    'code_name' => $codeName,
+                    'status' => $status,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        // Insert in chunks to be safe
+        foreach (array_chunk($infrastructures, 50) as $chunk) {
+            Infrastructure::insert($chunk);
         }
     }
 }

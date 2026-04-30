@@ -59,11 +59,11 @@
                     @endif
                 </td>
                 <td style="text-align: center; width: 60%;">
-                    <h2 style="margin: 0; font-size: 18px; font-weight: bold; font-family: Arial, sans-serif;">DASHBOARD EQUIPMENT AVAILABILITY</h2>
-                    <h3 style="margin: 5px 0 0 0; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif;">PORT OF TELUK BAYUR</h3>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: bold; font-family: Arial, sans-serif;">DASBOR KESIAPAN INFRASTRUKTUR</h2>
+                    <h3 style="margin: 5px 0 0 0; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif;">PELINDO REGIONAL GROUP</h3>
                 </td>
                 <td style="width: 20%; text-align: right; font-size: 12px; vertical-align: top; font-family: Arial, sans-serif;">
-                    <strong>Last Update:</strong><br>{{ now()->format('d-m-Y H:i') }}
+                    <strong>Pembaruan Terakhir:</strong><br>{{ now()->format('d-m-Y H:i') }}
                 </td>
             </tr>
         </table>
@@ -108,14 +108,14 @@
                         </tr>
                         
                         <tr>
-                            <td style="font-weight: bold; font-size: 12px; text-align: left; padding: 10px; border: 1px solid #000;">AVAILABLE</td>
+                            <td style="font-weight: bold; font-size: 12px; text-align: left; padding: 10px; border: 1px solid #000;">TERSEDIA</td>
                             @foreach($typeNames as $t)
                                 @php $av = $types[$t]->where('status', 'available')->count(); @endphp
                                 <td style="background-color: #10b981; color: white; font-size: 16px; font-weight: bold; padding: 10px; border: 1px solid #000;">{{ $av }}</td>
                             @endforeach
                         </tr>
                         <tr>
-                            <td style="font-weight: bold; font-size: 12px; text-align: left; padding: 10px; border: 1px solid #000;">BREAKDOWN</td>
+                            <td style="font-weight: bold; font-size: 12px; text-align: left; padding: 10px; border: 1px solid #000;">RUSAK</td>
                             @foreach($typeNames as $t)
                                 @php $bd = $types[$t]->where('status', 'breakdown')->count(); @endphp
                                 <td style="background-color: {{ $bd > 0 ? '#ef4444' : '#f59e0b' }}; color: white; font-size: 16px; font-weight: bold; padding: 10px; border: 1px solid #000;">{{ $bd }}</td>
@@ -132,11 +132,11 @@
         <table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #1e293b; font-size: 11px; font-family: Arial, sans-serif;">
             <tr style="background-color: #f8fafc; color: #0f172a;">
                 <th style="padding: 10px; border: 1px solid #1e293b;">NO</th>
-                <th style="padding: 10px; border: 1px solid #1e293b;">PELINDO ENTITY</th>
-                <th style="padding: 10px; border: 1px solid #1e293b;">EQUIPMENT</th>
-                <th style="padding: 10px; text-align: left; border: 1px solid #1e293b;">BREAKDOWN DETAIL</th>
-                <th style="padding: 10px; border: 1px solid #1e293b;">STATUS</th>
-                <th style="padding: 10px; border: 1px solid #1e293b;">PIC</th>
+                <th style="padding: 10px; border: 1px solid #1e293b;">ENTITAS PELABUHAN</th>
+                <th style="padding: 10px; border: 1px solid #1e293b;">IDENTITAS ALAT</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #1e293b;">RINGKASAN KENDALA</th>
+                <th style="padding: 10px; border: 1px solid #1e293b;">STATUS AKHIR</th>
+                <th style="padding: 10px; border: 1px solid #1e293b;">PIC/VENDOR</th>
             </tr>
             @foreach($recentBreakdowns ?? [] as $index => $log)
                 <tr>
@@ -144,7 +144,18 @@
                     <td style="padding: 10px; border: 1px solid #1e293b; font-weight: bold;">{{ optional(optional($log->infrastructure)->entity)->name ?? "-" }}</td>
                     <td style="padding: 10px; border: 1px solid #1e293b;">{{ optional($log->infrastructure)->code_name ?? "-" }}</td>
                     <td style="padding: 10px; text-align: left; border: 1px solid #1e293b; line-height: 1.4;">{{ $log->issue_detail }}</td>
-                    <td style="padding: 10px; border: 1px solid #1e293b; font-weight: bold;">{{ ucwords(str_replace("_", " ", $log->repair_status)) }}</td>
+                    <td style="padding: 10px; border: 1px solid #1e293b; font-weight: bold;">
+                        @php
+                            $statusConfig = [
+                                'reported' => 'Dilaporkan',
+                                'order_part' => 'Menunggu Suku Cadang',
+                                'on_progress' => 'Sedang Diperbaiki',
+                                'resolved' => 'Selesai'
+                            ];
+                            $label = $statusConfig[$log->repair_status] ?? $log->repair_status;
+                        @endphp
+                        {{ strtoupper($label) }}
+                    </td>
                     <td style="padding: 10px; border: 1px solid #1e293b;">{{ $log->vendor_pic ?? "Internal" }}</td>
                 </tr>
             @endforeach
