@@ -6,202 +6,185 @@
         [x-cloak] { display: none !important; }
 
         /* Custom Scrollbar Korporat */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar { height: 8px; width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        .table-scroll::-webkit-scrollbar { height: 8px; }
-        .table-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        /* Styling Form Select Khusus Status */
+        .status-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
     </style>
 
-    <div class="min-h-screen py-8" x-data="{ showDeleteModal: false, deleteUrl: '', assetCode: '' }">
-
-        <!-- MODAL DELETE (Enterprise Style) -->
-        <template x-teleport="body">
-            <div x-show="showDeleteModal" x-cloak
-                 class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                <div @click.away="showDeleteModal = false"
-                     x-show="showDeleteModal"
-                     x-transition.scale.origin.bottom.duration.200ms
-                     class="bg-white rounded-lg shadow-xl max-w-sm w-full border border-slate-200 overflow-hidden">
-                    <div class="p-6">
-                        <div class="flex items-start gap-4">
-                            <div class="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-bold text-slate-900">Konfirmasi Penghapusan Log</h3>
-                                <p class="text-xs text-slate-500 mt-1">Anda yakin menghapus riwayat laporan <strong class="text-slate-800" x-text="assetCode"></strong>? Data akan terhapus dari sistem.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end gap-2">
-                        <button @click="showDeleteModal = false" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded text-xs font-semibold hover:bg-slate-50 transition-colors">Batal</button>
-                        <form :action="deleteUrl" method="POST">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 transition-colors shadow-sm">Hapus Data</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </template>
-
+    <!-- Tambahkan x-data di container utama untuk state pencarian -->
+    <div class="min-h-screen py-8" x-data="{ search: '', filterStatus: 'all' }">
         <div class="max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 space-y-6">
 
             <!-- HEADER KORPORAT -->
-            <!-- FIX: overflow-hidden dihapus agar dropdown tidak terpotong -->
-            <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center relative animate-fade">
-                <!-- FIX: Ditambahkan rounded-l-lg agar garis merah tetap rapi di sudut -->
-                <div class="absolute left-0 top-0 h-full w-1.5 bg-red-600 rounded-l-lg"></div>
-
+            <div class="bg-white border border-slate-200 rounded-lg px-6 py-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm animate-fade">
                 <div>
                     <h1 class="text-lg font-bold text-[#003366] flex items-center gap-2">
-                        <i class="fas fa-clipboard-list text-red-600"></i> Riwayat Log Kerusakan (Global)
+                        <i class="fas fa-clipboard-list text-[#0055a4]"></i> Log Insiden & Kerusakan Aset
                     </h1>
-                    <p class="text-xs font-medium text-slate-500 mt-1">Pemantauan riwayat pelaporan insiden seluruh cabang Pelindo.</p>
+                    <p class="text-xs font-medium text-slate-500 mt-1">Sistem manajemen tiket perbaikan infrastruktur Pelindo.</p>
                 </div>
-
-                <div class="w-full xl:w-auto flex flex-col sm:flex-row gap-3">
-                    <div x-data="{ openExport: false }" class="relative w-full sm:w-auto">
-                        <button @click="openExport = !openExport" @click.away="openExport = false" class="w-full justify-center bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded text-xs font-semibold transition-colors flex items-center gap-2">
-                            <i class="fas fa-print text-slate-400"></i> Export Data <i class="fas fa-caret-down ml-1"></i>
-                        </button>
-
-                        <!-- FIX: z-[100] ditambahkan agar muncul di atas tabel -->
-                        <div x-show="openExport" x-transition class="absolute right-0 mt-1 w-40 bg-white rounded shadow-lg border border-slate-200 z-[100] py-1">
-                            <button onclick="openExportModal('pdf')" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 flex items-center gap-2">
-                                <i class="fas fa-file-pdf text-red-500 w-4"></i> PDF format
-                            </button>
-                            <button onclick="openExportModal('excel')" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 flex items-center gap-2">
-                                <i class="fas fa-file-excel text-emerald-500 w-4"></i> Excel format
-                            </button>
-                        </div>
-                    </div>
+                <div class="shrink-0">
+                    <a href="{{ route('admin.breakdowns.create') }}" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded text-xs font-semibold shadow-sm transition-colors">
+                        <i class="fas fa-plus"></i> Lapor Insiden Baru
+                    </a>
                 </div>
             </div>
 
             <!-- ALERTS -->
             @if(session('success'))
-                <div class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-3 rounded-md text-sm font-medium shadow-sm flex items-center gap-3">
+                <div class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-5 py-3 rounded-lg text-xs font-semibold shadow-sm flex items-center gap-3">
                     <i class="fas fa-check-circle text-emerald-500"></i> {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-md text-sm font-medium shadow-sm flex items-center gap-3">
-                    <i class="fas fa-exclamation-triangle text-red-500"></i> {{ session('error') }}
                 </div>
             @endif
 
             <!-- TABLE CONTAINER -->
             <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden flex flex-col animate-fade" style="animation-delay: 100ms;">
 
-                <div class="overflow-x-auto table-scroll w-full relative z-0">
-                    <table class="w-full text-left border-collapse min-w-[1200px]">
+                <!-- FILTER BAR (FITUR BARU) -->
+                <div class="bg-slate-50 border-b border-slate-200 px-5 py-4 flex flex-col sm:flex-row gap-3">
+                    <!-- Search Input -->
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" x-model="search" placeholder="Cari Kode Aset, Lokasi, atau Detail Masalah..."
+                               class="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded text-xs font-medium text-slate-700 focus:ring-[#0055a4] focus:border-[#0055a4] transition-colors shadow-sm">
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="w-full sm:w-56 shrink-0">
+                        <select x-model="filterStatus" class="w-full px-3 py-2 bg-white border border-slate-300 rounded text-xs font-medium text-slate-700 focus:ring-[#0055a4] focus:border-[#0055a4] transition-colors shadow-sm cursor-pointer">
+                            <option value="all">Semua Status Perbaikan</option>
+                            <option value="reported">Dilaporkan (Reported)</option>
+                            <option value="order_part">Menunggu Part (Order Part)</option>
+                            <option value="on_progress">Sedang Diperbaiki (On Progress)</option>
+                            <option value="resolved">Telah Selesai (Resolved)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Table Wrapper -->
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left border-collapse min-w-[1050px]">
                         <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
-                                <th class="px-5 py-3.5 w-12 text-center sticky left-0 bg-slate-50 shadow-[1px_0_0_0_#e2e8f0] z-10">No</th>
-                                <th class="px-5 py-3.5 w-48 sticky left-[3rem] bg-slate-50 shadow-[1px_0_0_0_#e2e8f0] z-10">Unit & Lokasi</th>
-                                <th class="px-5 py-3.5 min-w-[200px]">Uraian Laporan</th>
-                                <th class="px-5 py-3.5 w-32 text-center">Status Akhir</th>
-                                <th class="px-5 py-3.5 w-24 text-center">Tgl Lapor</th>
-                                <th class="px-5 py-3.5 w-32 text-center">Tanggal Proses</th>
-                                <th class="px-5 py-3.5 w-32 text-center">Penyelesaian</th>
-                                <th class="px-5 py-3.5 w-40">Pelaksana/PIC</th>
-                                <th class="px-5 py-3.5 w-20 text-center">Dokumen</th>
-                                <th class="px-5 py-3.5 w-16 text-center">Hapus</th>
+                            <tr class="bg-white border-b border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                                <th class="px-5 py-3.5 w-12 text-center">No</th>
+                                <th class="px-5 py-3.5 w-40">Kode Aset</th>
+                                <th class="px-5 py-3.5 w-48">Lokasi Entitas</th>
+                                <th class="px-5 py-3.5 min-w-[250px]">Detail Laporan</th>
+                                <th class="px-5 py-3.5 w-48 text-center">Status Perbaikan</th>
+                                <th class="px-5 py-3.5 w-48">PIC / Vendor</th>
+                                <th class="px-5 py-3.5 w-24 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
                             @forelse($logs as $index => $log)
-                            <tr class="hover:bg-slate-50/70 transition-colors group">
-                                <td class="px-5 py-3 text-center font-medium text-slate-500 sticky left-0 bg-white group-hover:bg-slate-50 shadow-[1px_0_0_0_#f1f5f9] z-10">
-                                    {{ $logs->firstItem() + $index }}
+                            <!-- ALPINE LOGIC UNTUK FILTER BARIS -->
+                            <tr x-data="{
+                                    rowCode: '{{ strtolower(addslashes($log->infrastructure->code_name ?? '')) }}',
+                                    rowEntity: '{{ strtolower(addslashes($log->infrastructure->entity->name ?? '')) }}',
+                                    rowDetail: '{{ strtolower(addslashes($log->issue_detail ?? '')) }}',
+                                    rowPic: '{{ strtolower(addslashes($log->vendor_pic ?? '')) }}',
+                                    rowStatus: '{{ $log->repair_status }}'
+                                }"
+                                x-show="(filterStatus === 'all' || filterStatus === rowStatus) &&
+                                        (search === '' || rowCode.includes(search.toLowerCase()) || rowEntity.includes(search.toLowerCase()) || rowDetail.includes(search.toLowerCase()) || rowPic.includes(search.toLowerCase()))"
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                class="hover:bg-slate-50/70 transition-colors">
+
+                                <td class="px-5 py-4 text-center font-medium text-slate-500">
+                                    {{ $index + 1 }}
                                 </td>
 
-                                <td class="px-5 py-3 sticky left-[3rem] bg-white group-hover:bg-slate-50 shadow-[1px_0_0_0_#f1f5f9] z-10">
-                                    <div class="font-bold text-[#003366]">{{ $log->infrastructure->code_name ?? 'ASET TERHAPUS' }}</div>
-                                    <div class="text-[10px] text-slate-500 mt-0.5">{{ $log->infrastructure->entity->name ?? '-' }}</div>
+                                <td class="px-5 py-4">
+                                    <div class="inline-flex items-center gap-2 bg-slate-100 border border-slate-200 px-2 py-1 rounded text-[#003366] font-mono font-bold text-[11px]">
+                                        {{ $log->infrastructure->code_name ?? 'TANPA-KODE' }}
+                                    </div>
                                 </td>
 
-                                <td class="px-5 py-3">
-                                    <p class="text-slate-700 font-medium leading-snug line-clamp-2" title="{{ $log->issue_detail }}">
+                                <td class="px-5 py-4 font-semibold text-slate-700">
+                                    {{ $log->infrastructure->entity->name ?? '-' }}
+                                </td>
+
+                                <td class="px-5 py-4">
+                                    <!-- Line clamp agar tidak terlalu panjang memakan ruang vertikal -->
+                                    <p class="text-slate-700 font-medium leading-relaxed line-clamp-2" title="{{ $log->issue_detail }}">
                                         {{ $log->issue_detail }}
                                     </p>
-                                </td>
-
-                                <td class="px-5 py-3 text-center">
-                                    @php
-                                        $statusConfig = [
-                                            'reported' => ['bg' => 'bg-red-50', 'text' => 'text-red-700', 'border' => 'border-red-200', 'label' => 'Dilaporkan'],
-                                            'order_part' => ['bg' => 'bg-purple-50', 'text' => 'text-purple-700', 'border' => 'border-purple-200', 'label' => 'Order Suku Cadang'],
-                                            'on_progress' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'border' => 'border-amber-200', 'label' => 'On Progress'],
-                                            'resolved' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'border' => 'border-emerald-200', 'label' => 'Resolved']
-                                        ];
-                                        $conf = $statusConfig[$log->repair_status] ?? $statusConfig['reported'];
-                                    @endphp
-                                    <span class="inline-flex {{ $conf['bg'] }} {{ $conf['text'] }} border {{ $conf['border'] }} px-2 py-1 rounded text-[9px] font-bold uppercase whitespace-nowrap">
-                                        {{ $conf['label'] }}
-                                    </span>
-                                </td>
-
-                                <td class="px-5 py-3 text-center font-medium">
-                                    {{ $log->created_at->format('d/m/Y') }}
-                                </td>
-
-                                <td class="px-5 py-3 text-center">
-                                    <div class="text-[10px] text-slate-500 space-y-0.5">
-                                        <div class="flex justify-between"><span>T.Shoot:</span> <span class="font-medium text-slate-800">{{ $log->troubleshoot_date ? \Carbon\Carbon::parse($log->troubleshoot_date)->format('d/m/y') : '-' }}</span></div>
-                                        <div class="flex justify-between"><span>W.Order:</span> <span class="font-medium text-slate-800">{{ $log->work_order_date ? \Carbon\Carbon::parse($log->work_order_date)->format('d/m/y') : '-' }}</span></div>
-                                        <div class="flex justify-between"><span>Mulai:</span> <span class="font-medium text-slate-800">{{ $log->start_work_date ? \Carbon\Carbon::parse($log->start_work_date)->format('d/m/y') : '-' }}</span></div>
+                                    <div class="flex items-center gap-1.5 mt-1.5 text-[10px] text-slate-400 font-medium">
+                                        <i class="far fa-clock"></i> Dilaporkan: {{ $log->created_at->format('d M Y, H:i') }}
                                     </div>
                                 </td>
 
-                                <td class="px-5 py-3 text-center">
-                                    <div class="text-[10px] text-slate-500 space-y-0.5">
-                                        <div class="flex justify-between"><span>Test:</span> <span class="font-medium text-slate-800">{{ $log->com_test_date ? \Carbon\Carbon::parse($log->com_test_date)->format('d/m/y') : '-' }}</span></div>
-                                        <div class="flex justify-between"><span>BA:</span> <span class="font-medium text-slate-800">{{ $log->ba_date ? \Carbon\Carbon::parse($log->ba_date)->format('d/m/y') : '-' }}</span></div>
-                                        <div class="flex justify-between border-t border-slate-100 pt-0.5 mt-0.5">
-                                            <span class="font-bold">Selesai:</span>
-                                            <span class="font-bold text-emerald-600">{{ $log->resolved_date ? \Carbon\Carbon::parse($log->resolved_date)->format('d/m/y') : '-' }}</span>
-                                        </div>
-                                    </div>
+                                <td class="px-5 py-4 text-center">
+                                    <form action="{{ route('admin.breakdowns.update', $log->id) }}" method="POST" class="w-full">
+                                        @csrf @method('PUT')
+                                        <select name="repair_status" onchange="this.form.submit()"
+                                            class="status-select w-full text-[11px] font-semibold rounded border py-1.5 px-3 focus:ring-1 focus:ring-offset-0 focus:ring-[#003366] transition-colors cursor-pointer
+                                            {{ $log->repair_status == 'resolved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 focus:border-emerald-500' :
+                                              ($log->repair_status == 'on_progress' ? 'bg-amber-50 text-amber-700 border-amber-200 focus:border-amber-500' :
+                                              ($log->repair_status == 'order_part' ? 'bg-purple-50 text-purple-700 border-purple-200 focus:border-purple-500' :
+                                              'bg-red-50 text-red-700 border-red-200 focus:border-red-500')) }}">
+
+                                            <option value="reported" {{ $log->repair_status == 'reported' ? 'selected' : '' }}>Dilaporkan</option>
+                                            <option value="order_part" {{ $log->repair_status == 'order_part' ? 'selected' : '' }}>Order Suku Cadang</option>
+                                            <option value="on_progress" {{ $log->repair_status == 'on_progress' ? 'selected' : '' }}>Sedang Diperbaiki</option>
+                                            <option value="resolved" {{ $log->repair_status == 'resolved' ? 'selected' : '' }}>Telah Selesai (Resolved)</option>
+                                        </select>
+                                    </form>
                                 </td>
 
-                                <td class="px-5 py-3">
-                                    <p class="font-semibold text-slate-800">{{ $log->vendor_pic ?? 'Internal' }}</p>
+                                <td class="px-5 py-4">
+                                    <p class="font-semibold text-slate-800">{{ $log->vendor_pic ?? 'Tim Internal' }}</p>
                                     @if($log->updated_by)
-                                        <p class="text-[9px] text-slate-400 mt-0.5" title="Diperbarui oleh System/User">By: {{ $log->updatedBy->name ?? 'System' }}</p>
+                                        <p class="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+                                            <i class="fas fa-user-edit text-slate-400"></i> Update: {{ $log->updatedBy->name ?? 'System' }}
+                                        </p>
                                     @endif
                                 </td>
 
-                                <td class="px-5 py-3 text-center">
-                                    @if($log->document_proof)
-                                        <a href="{{ asset('storage/'.$log->document_proof) }}" target="_blank" class="inline-flex items-center justify-center w-7 h-7 bg-slate-50 border border-slate-200 text-slate-500 hover:text-[#0055a4] hover:bg-blue-50 hover:border-blue-200 rounded transition-colors" title="Lihat Bukti Fisik">
-                                            <i class="fas fa-file-alt text-xs"></i>
+                                <td class="px-5 py-4 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="{{ route('admin.breakdowns.edit', $log->id) }}"
+                                           class="w-7 h-7 inline-flex items-center justify-center bg-white border border-slate-300 text-slate-500 hover:bg-slate-50 hover:text-[#0055a4] rounded transition-colors"
+                                           title="Edit Laporan">
+                                            <i class="fas fa-pen text-[10px]"></i>
                                         </a>
-                                    @else
-                                        <span class="text-slate-300">-</span>
-                                    @endif
-                                </td>
 
-                                <td class="px-5 py-3 text-center">
-                                    <button type="button"
-                                            @click="deleteUrl = '{{ route('admin.breakdowns.destroy', $log->id) }}'; assetCode = '{{ addslashes($log->infrastructure->code_name ?? 'Aset Terhapus') }}'; showDeleteModal = true;"
-                                            class="inline-flex items-center justify-center w-7 h-7 bg-white border border-slate-200 text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded transition-colors">
-                                        <i class="fas fa-trash-alt text-xs"></i>
-                                    </button>
+                                        <form action="{{ route('admin.breakdowns.destroy', $log->id) }}" method="POST" class="inline"
+                                              onsubmit="return confirm('Peringatan: Menghapus log ini secara otomatis akan mengembalikan status aset menjadi Ready jika tidak ada laporan aktif lain. Lanjutkan?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                    class="w-7 h-7 inline-flex items-center justify-center bg-white border border-slate-300 text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 rounded transition-colors"
+                                                    title="Hapus Laporan">
+                                                <i class="fas fa-trash-alt text-[10px]"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="10" class="px-5 py-16 text-center">
+                                <td colspan="7" class="px-5 py-16 text-center">
                                     <div class="w-12 h-12 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                                        <i class="fas fa-history text-xl text-slate-300"></i>
+                                        <i class="fas fa-clipboard-check text-xl text-slate-300"></i>
                                     </div>
-                                    <p class="text-sm font-semibold text-slate-700">Belum Ada Riwayat</p>
-                                    <p class="text-xs text-slate-500 mt-1">Sistem belum mencatat adanya pelaporan kerusakan.</p>
+                                    <p class="text-sm font-semibold text-slate-700">Tidak Ada Log Insiden</p>
+                                    <p class="text-xs text-slate-500 mt-1">Saat ini tidak ada laporan kerusakan alat yang tercatat di sistem.</p>
                                 </td>
                             </tr>
                             @endforelse
@@ -209,26 +192,25 @@
                     </table>
                 </div>
 
+                <!-- Pagination Section -->
                 @if(method_exists($logs, 'links') && $logs->hasPages())
                 <div class="bg-slate-50 border-t border-slate-200 px-6 py-3">
                     {{ $logs->links() }}
+                    <p class="text-[10px] text-slate-400 mt-2 italic">* Fitur pencarian instan di atas hanya menyaring data pada halaman yang sedang aktif.</p>
                 </div>
                 @endif
             </div>
 
             <!-- FOOTER INFO -->
-            <div class="flex flex-col sm:flex-row items-center justify-between text-slate-400 pt-2 gap-2">
+            <div class="flex items-center justify-between text-slate-500 pt-2">
                 <p class="text-[10px] font-semibold uppercase tracking-wider">&copy; {{ date('Y') }} Pelindo Command Center</p>
                 <div class="flex gap-4">
-                    <span class="text-[10px] font-medium flex items-center gap-1.5"><i class="fas fa-info-circle text-blue-400"></i> Data disajikan secara Real-time</span>
+                    <span class="text-[10px] font-medium flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Dilaporkan</span>
+                    <span class="text-[10px] font-medium flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Proses</span>
+                    <span class="text-[10px] font-medium flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Selesai</span>
                 </div>
             </div>
 
         </div>
     </div>
-
-    <!-- Hidden Logic Components -->
-    <x-export-report :infrastructures="$allInfrastructures" :recentBreakdowns="$recentBreakdowns" />
-    <x-export-filter-modal />
-
 </x-app-layout>
