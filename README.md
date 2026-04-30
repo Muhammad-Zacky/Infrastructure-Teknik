@@ -1,16 +1,14 @@
 <div align="center">
-  <!-- Replace with actual logo if needed -->
   <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Logo_Baru_Pelindo_%282021%29.png" alt="Pelindo Logo" width="300" style="margin-bottom: 20px" />
 
-# 🏗️ Pelindo Infrastructure Reporting System
+# Pelindo Infrastructure Reporting System
 
-**Divisi Teknik & Infrastructure**
+**PT Pelabuhan Indonesia (Persero) Regional 2 Teluk Bayur**
+**Divisi Teknik & Infrastruktur**
 
-Modernized application for reporting, tracking, and managing Pelindo's infrastructure assets with a professional, responsive, and data-consistent user experience.
+Modernized application for reporting, tracking, and managing Pelindo's infrastructure assets, ensuring data consistency and streamlined operational workflows.
 
   <br />
-
-  <!-- Badges -->
 
 ![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
@@ -22,127 +20,132 @@ Modernized application for reporting, tracking, and managing Pelindo's infrastru
 
 <br />
 
-## ✨ Features & Highlights
+## System Features & Capabilities
 
-- 🎨 **Standardized UI/UX Design**
-    - Integrated _Pelindo Blue_ color palette for brand consistency.
-    - Interactive and smooth UI components using **Alpine.js** (modals, dropdowns, alerts).
-    - Uniform error and success messaging across the entire application.
+- **Standardized User Interface**
+    - Integrated Pelindo corporate color palette for brand consistency across all modules.
+    - Responsive and interactive UI components utilizing Alpine.js for modals, dynamic dropdowns, and system alerts.
+    - Uniform error handling and success messaging to ensure clarity for operational users.
 
-- 📱 **Fully Responsive Layout**
-    - Optimized for cross-device usability (Mobile, Tablet, Desktop).
-    - Clean navigation and dashboard cards with properly managed layout and z-index components to prevent overlaps.
+- **Responsive & Optimized Layout**
+    - Engineered for cross-device compatibility, ensuring full accessibility via mobile, tablet, and desktop environments.
+    - Structured navigation and dashboard architecture with strict z-index management to prevent element overlapping during data presentation.
 
-- 🗂️ **Dynamic Asset Management**
-    - Category-specific dynamic icons for easy and quick identification of infrastructure assets.
-    - Comprehensive detailed view modals for fast asset inspection without leaving the active page.
+- **Dynamic Asset Management**
+    - Category-specific dynamic indicators for rapid identification of physical infrastructure and technical assets.
+    - Comprehensive data retrieval via detailed view modals, allowing administrative users to inspect asset conditions without disrupting the active workflow.
 
-- ⚙️ **Streamlined Operations**
-    - Optimized administrative CRUD operations for faster data entry and data management.
-    - Improved operational workflows for generating, tracking, and managing infrastructure reports.
-
----
-
-## 🛠️ Tech Stack
-
-- **Backend Framework:** [Laravel](https://laravel.com/) (PHP)
-- **Frontend Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Frontend Interactivity:** [Alpine.js](https://alpinejs.dev/)
-- **Build Tool:** [Vite](https://vitejs.dev/)
-- **Database:** MySQL
+- **Operational Efficiency**
+    - Optimized CRUD operations configured for high-speed data entry and bulk data management.
+    - Automated operational workflows for generating, tracking, and archiving internal infrastructure reports.
 
 ---
 
-## 🚀 Getting Started
+## Technical Stack
 
-Follow these instructions to set up the project locally for development and testing.
+- **Backend Architecture:** [Laravel](https://laravel.com/) (PHP)
+- **Frontend Framework:** [Tailwind CSS](https://tailwindcss.com/)
+- **Client-side Scripting:** [Alpine.js](https://alpinejs.dev/)
+- **Asset Bundler:** [Vite](https://vitejs.dev/)
+- **Database Management:** MySQL
 
-### Prerequisites
+---
 
-Make sure you have the following installed on your local machine:
+## Deployment & Installation Guide
+
+The following instructions are intended for the internal development and engineering team to establish a local environment for maintenance and feature testing.
+
+### System Prerequisites
+
+Ensure the following dependencies are installed on the local or staging server:
 
 - PHP >= 8.1
 - Composer
 - Node.js & NPM
 - MySQL Server
 
-### Installation Guide
+### Initialization Steps
 
-1. **Clone the repository** (if you haven't already):
+1. **Repository Cloning:**
+   Clone the secure repository to your local directory.
 
     ```bash
-    git clone <your-repository-url>
+    git clone <internal-repository-url>
     cd DIVISI-TEKNIK-INFRASTRUCTURE
     ```
 
-2. **Install PHP Dependencies:**
+2. **Backend Dependency Installation:**
+   Install required PHP packages via Composer.
 
     ```bash
     composer install
     ```
 
-3. **Install NPM Dependencies:**
+3. **Frontend Dependency Installation:**
+   Install necessary Node modules.
 
     ```bash
     npm install
     ```
 
-4. **Environment Setup:**
-   Copy the example environment file and configure your database credentials (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
+4. **Environment Configuration:**
+   Duplicate the example environment file and assign the appropriate database credentials (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
 
     ```bash
     cp .env.example .env
     ```
 
-    Generate the Laravel application key:
+   Generate the application encryption key:
 
     ```bash
     php artisan key:generate
     ```
 
-5. **Run Database Migrations (and Seeders):**
+5. **Database Migration & Seeding:**
+   Execute migrations to build the schema and populate initial reference data.
 
     ```bash
     php artisan migrate --seed
     ```
 
-6. **Start the Development Servers:**
-   You will need two terminal windows to run both the backend and frontend dev servers.
+6. **Server Execution:**
+   Initialize the dual-server setup for full-stack development.
 
-    _Terminal 1 (Laravel Server):_
+   *Terminal 1 (Backend Service):*
 
     ```bash
     php artisan serve
     ```
 
-    _Terminal 2 (Vite Assets Server):_
+   *Terminal 2 (Asset Compilation):*
 
     ```bash
     npm run dev
     ```
 
-Your application should now be accessible at `http://localhost:8000`.
+The application interface will be available at `http://localhost:8000`.
 
 ---
 
-## 📸 System Previews
+## System Previews
 
-> _Placeholders for actual system screenshots. Add them to an `assets` folder and update the links below._
+> *Internal Note: Replace placeholders with official system screenshots before finalizing documentation.*
 
-|                                         Dashboard View                                          |                                    Asset Details Modal                                     |
-| :---------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------: |
+| Dashboard Overview | Asset Details Interface |
+| :---: | :---: |
 | ![Dashboard](https://via.placeholder.com/600x350/E2E8F0/1E293B?text=Dashboard+Overview+Preview) | ![Modal](https://via.placeholder.com/600x350/E2E8F0/1E293B?text=Asset+Detailed+View+Modal) |
 
 ---
 
-## 👨‍💻 Development Guidelines
+## Development Standards & Guidelines
 
-- **Styling**: Stick to utility classes provided by Tailwind CSS. Custom CSS should be minimal and placed in `resources/css/app.css`.
-- **Scripts**: Use Alpine.js directly in Blade templates for simple interactions.
-- **Components**: Reusable UI elements (like buttons, modals) should be extracted into Blade components in `resources/views/components/`.
+- **Styling Protocol:** Utilize Tailwind CSS utility classes strictly. Custom styling should be minimal and centralized within `resources/css/app.css`.
+- **Interactivity:** Implement Alpine.js directly within Blade templates to manage state and simple DOM manipulation.
+- **Component Modularity:** Reusable interface elements (buttons, forms, modals) must be extracted and maintained as Blade components within the `resources/views/components/` directory.
 
 ---
 
 <div align="center">
-  <p>Built with ❤️ for Pelindo Divisi Teknik & Infrastructure</p>
+  <p><strong>Internal Document - PT Pelabuhan Indonesia (Persero) Regional 2 Teluk Bayur</strong></p>
+  <p>Maintained by Divisi Teknik & Infrastruktur</p>
 </div>
