@@ -1,6 +1,6 @@
 <div align="center">
   <!-- Replace with actual logo if needed -->
-  <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Logo_Pelindo.png" alt="Pelindo Logo" width="300" style="margin-bottom: 20px" />
+  <img src="https://id.wikipedia.org/wiki/Berkas:Logo_Baru_Pelindo_%282021%29.png" alt="Pelindo Logo" width="300" style="margin-bottom: 20px" />
 
   # 🏗️ Pelindo Infrastructure Reporting System
   
